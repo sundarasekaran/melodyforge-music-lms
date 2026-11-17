@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
 
 spring:
   application:
@@ -16,10 +16,10 @@ spring:
 
 app:
   jwt:
-    secret: "MusicLmsMasterSecretKeyForDevAndTestPurposesWithMinimum256BitsLength1234567890!"
+    secret: "${JWT_SECRET:MusicLmsMasterSecretKeyForDevAndTestPurposesWithMinimum256BitsLength1234567890!}"
     expiration-ms: 86400000 # 24 hours
   cors:
-    allowed-origins: "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+    allowed-origins: "${CORS_ALLOWED_ORIGINS:*}"
 
 ---
 spring:
@@ -45,10 +45,10 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://localhost:5432/musiclms
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL:jdbc:postgresql://localhost:5432/musiclms}}
     driver-class-name: org.postgresql.Driver
-    username: postgres
-    password: ${POSTGRES_PASSWORD:postgres}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME:postgres}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD:${POSTGRES_PASSWORD:postgres}}}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: false
