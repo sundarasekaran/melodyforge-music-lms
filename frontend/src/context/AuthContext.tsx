@@ -6,8 +6,9 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (usernameOrEmail: string, password: string) => Promise<void>;
-  register: (email: string, username: string, displayName: string, password: string) => Promise<void>;
+  savedUsername: string;
+  login: (usernameOrEmail: string, password: string, rememberMe?: boolean) => Promise<void>;
+  register: (email: string, username: string, displayName: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
   switchDemoAccount: (role: 'STUDENT' | 'ADMIN') => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -17,15 +18,31 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('music_lms_token'));
-  const [isLoading, setIsLoading] = useState(true);
-
-  const fetchCurrentUser = async () => {
+  // Synchronous recovery from localStorage for instant, flicker-free rendering
+  const getInitialUser = (): User | null => {
     try {
-      if (api.getToken()) {
+      const stored = localStorage.getItem('music_lms_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const [user, setUser] = useState<User | null>(getInitialUser);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('music_lms_token'));
+  const [savedUsername, setSavedUsername] = useState<string>(
+    localStorage.getItem('music_lms_saved_username') || ''
+  );
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Background verification of token with backend
+  const verifyAndRefreshUser = async () => {
+    const storedToken = localStorage.getItem('music_lms_token');
+    if (storedToken) {
+      api.setToken(storedToken);
+      try {
         const data = await api.getCurrentUser();
-        setUser({
+        const refreshedUser: User = {
           id: data.id,
           username: data.username,
           email: data.email,
@@ -34,28 +51,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           totalXp: data.totalXp,
           currentLevel: data.currentLevel,
           currentStreakDays: data.currentStreakDays,
-        });
+        };
+        setUser(refreshedUser);
+        localStorage.setItem('music_lms_user', JSON.stringify(refreshedUser));
+      } catch (e: any) {
+        // If explicitly unauthorized (e.g. invalid or expired JWT token), clear session
+        const msg = String(e?.message || '');
+        if (msg.includes('401') || msg.includes('403') || msg.includes('Unauthorized')) {
+          console.warn('Session expired, clearing credentials', e);
+          logout();
+        } else {
+          // Network delay or cold start; retain cached user so user is not kicked out
+          console.warn('Backend verification pending (possible server wake-up). Keeping cached user.', e);
+        }
       }
-    } catch (e) {
-      console.warn('Failed to fetch current user, clearing session', e);
-      api.setToken(null);
-      setToken(null);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCurrentUser();
+    verifyAndRefreshUser();
   }, []);
 
-  const login = async (usernameOrEmail: string, password: string) => {
+  const login = async (usernameOrEmail: string, password: string, rememberMe: boolean = true) => {
     setIsLoading(true);
     try {
       const data = await api.login(usernameOrEmail, password);
-      setToken(data.token);
-      setUser({
+      const authenticatedUser: User = {
         id: data.id,
         username: data.username,
         email: data.email,
@@ -64,18 +85,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totalXp: data.totalXp,
         currentLevel: data.currentLevel,
         currentStreakDays: data.currentStreakDays,
-      });
+      };
+
+      setToken(data.token);
+      setUser(authenticatedUser);
+
+      // Persist signed credentials for later
+      localStorage.setItem('music_lms_token', data.token);
+      localStorage.setItem('music_lms_user', JSON.stringify(authenticatedUser));
+      
+      if (rememberMe) {
+        localStorage.setItem('music_lms_saved_username', usernameOrEmail);
+        localStorage.setItem('music_lms_remember_me', 'true');
+        setSavedUsername(usernameOrEmail);
+      } else {
+        localStorage.removeItem('music_lms_saved_username');
+        localStorage.removeItem('music_lms_remember_me');
+        setSavedUsername('');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const register = async (email: string, username: string, displayName: string, password: string) => {
+  const register = async (
+    email: string,
+    username: string,
+    displayName: string,
+    password: string,
+    rememberMe: boolean = true
+  ) => {
     setIsLoading(true);
     try {
       const data = await api.register(email, username, displayName, password);
-      setToken(data.token);
-      setUser({
+      const newUser: User = {
         id: data.id,
         username: data.username,
         email: data.email,
@@ -84,7 +127,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totalXp: data.totalXp,
         currentLevel: data.currentLevel,
         currentStreakDays: data.currentStreakDays,
-      });
+      };
+
+      setToken(data.token);
+      setUser(newUser);
+
+      // Persist signed credentials for later
+      localStorage.setItem('music_lms_token', data.token);
+      localStorage.setItem('music_lms_user', JSON.stringify(newUser));
+
+      if (rememberMe) {
+        localStorage.setItem('music_lms_saved_username', username);
+        localStorage.setItem('music_lms_remember_me', 'true');
+        setSavedUsername(username);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -94,44 +150,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     api.setToken(null);
     setToken(null);
     setUser(null);
+    localStorage.removeItem('music_lms_token');
+    localStorage.removeItem('music_lms_user');
+    // Note: savedUsername is retained in localStorage so the user can easily re-login
   };
 
   const switchDemoAccount = async (role: 'STUDENT' | 'ADMIN') => {
     if (role === 'STUDENT') {
-      await login('student', 'student123');
+      await login('student', 'student123', true);
     } else {
-      await login('admin', 'admin123');
+      await login('admin', 'admin123', true);
     }
   };
 
   const refreshUser = async () => {
-    await fetchCurrentUser();
+    await verifyAndRefreshUser();
   };
 
   const awardLocalXp = (xp: number) => {
     if (user) {
       const newXp = user.totalXp + xp;
       const newLevel = Math.max(1, Math.floor(newXp / 250) + 1);
-      setUser({
+      const updatedUser: User = {
         ...user,
         totalXp: newXp,
         currentLevel: newLevel,
-      });
+      };
+      setUser(updatedUser);
+      localStorage.setItem('music_lms_user', JSON.stringify(updatedUser));
     }
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      token,
-      isLoading,
-      login,
-      register,
-      logout,
-      switchDemoAccount,
-      refreshUser,
-      awardLocalXp,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isLoading,
+        savedUsername,
+        login,
+        register,
+        logout,
+        switchDemoAccount,
+        refreshUser,
+        awardLocalXp,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

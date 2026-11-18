@@ -1,0 +1,544 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import {
+  Music,
+  Lock,
+  Mail,
+  User as UserIcon,
+  Sparkles,
+  Eye,
+  EyeOff,
+  CheckSquare,
+  Square,
+  ArrowRight,
+  ShieldCheck,
+  Headphones,
+  BookOpen,
+  Award,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+} from 'lucide-react';
+import { Button } from '../ui/Button';
+
+export const AuthPage: React.FC = () => {
+  const { login, register, savedUsername } = useAuth();
+
+  const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+
+  // Login form state
+  const [loginIdentifier, setLoginIdentifier] = useState(savedUsername || '');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Register form state
+  const [regName, setRegName] = useState('');
+  const [regUsername, setRegUsername] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+
+  // UI status state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSlowResponse, setIsSlowResponse] = useState(false);
+
+  // Sync remembered username when available
+  useEffect(() => {
+    if (savedUsername && !loginIdentifier) {
+      setLoginIdentifier(savedUsername);
+    }
+  }, [savedUsername]);
+
+  // Monitor long requests (e.g. Render server waking up)
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (isSubmitting) {
+      timer = setTimeout(() => {
+        setIsSlowResponse(true);
+      }, 3500);
+    } else {
+      setIsSlowResponse(false);
+    }
+    return () => clearTimeout(timer);
+  }, [isSubmitting]);
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const identifier = loginIdentifier.trim();
+    if (!identifier) {
+      setErrorMessage('Please enter your username or email address.');
+      return;
+    }
+    if (!loginPassword) {
+      setErrorMessage('Please enter your password.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await login(identifier, loginPassword, rememberMe);
+      setSuccessMessage('Welcome back! Loading your music studio...');
+    } catch (err: any) {
+      const msg = err?.message || 'Login failed. Please check your credentials and try again.';
+      if (msg.includes('403') || msg.includes('401') || msg.includes('BadCredentials')) {
+        setErrorMessage('Invalid username or password. Please try again.');
+      } else {
+        setErrorMessage(msg);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const name = regName.trim();
+    const username = regUsername.trim();
+    const email = regEmail.trim();
+
+    if (!name) {
+      setErrorMessage('Please enter your full name or display name.');
+      return;
+    }
+    if (!username) {
+      setErrorMessage('Please choose a username.');
+      return;
+    }
+    if (!email || !email.includes('@')) {
+      setErrorMessage('Please enter a valid email address.');
+      return;
+    }
+    if (!regPassword || regPassword.length < 6) {
+      setErrorMessage('Password must be at least 6 characters.');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setErrorMessage('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await register(email, username, name, regPassword, rememberMe);
+      setSuccessMessage('Account created successfully! Preparing your musical journey...');
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Registration failed. That username or email may already be taken.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Quick-fill credentials helper
+  const handleQuickDemo = async (user: string, pass: string) => {
+    setLoginIdentifier(user);
+    setLoginPassword(pass);
+    setErrorMessage(null);
+    setIsSubmitting(true);
+    try {
+      await login(user, pass, true);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Quick demo login failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
+      {/* Background ambient lighting */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        {/* Left Column: Brand & Product Highlights */}
+        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+          {/* Logo Pill */}
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 shadow-inner">
+            <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center">
+              <Music size={12} />
+            </div>
+            <span className="text-xs font-bold uppercase tracking-wider text-indigo-300">
+              MelodyForge Music Academy
+            </span>
+            <span className="flex items-center gap-1 text-[10px] font-extrabold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+              <Sparkles size={10} /> LIVE
+            </span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            Master Music <br />
+            <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 bg-clip-text text-transparent">
+              One Note at a Time
+            </span>
+          </h1>
+
+          <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+            A gamified, multi-instrument music learning platform. Play the polyphonic virtual piano,
+            train your ear, complete historical chapters, and record your studio practice.
+          </p>
+
+          {/* Feature Highlights Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+              <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shrink-0">
+                <Music size={18} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Polyphonic Piano</h4>
+                <p className="text-[11px] text-slate-400 leading-snug">Web Audio synthesizer & live staff notation.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+              <div className="p-2 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 shrink-0">
+                <BookOpen size={18} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">4-Tier Curriculum</h4>
+                <p className="text-[11px] text-slate-400 leading-snug">Basics to Expert with historical milestones.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+                <Headphones size={18} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Ear Training Arena</h4>
+                <p className="text-[11px] text-slate-400 leading-snug">Pitch, interval, and chord recognition quizzes.</p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                <Award size={18} />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Gamification & XP</h4>
+                <p className="text-[11px] text-slate-400 leading-snug">Daily streak flames, 7 trophies & global rankings.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Interactive Sign In / Register Card */}
+        <div className="lg:col-span-6 w-full max-w-md mx-auto">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/40">
+            {/* Mode Switcher Tabs */}
+            <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-2xl border border-slate-800 mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('LOGIN');
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
+                }}
+                className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+                  mode === 'LOGIN'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('REGISTER');
+                  setErrorMessage(null);
+                  setSuccessMessage(null);
+                }}
+                className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
+                  mode === 'REGISTER'
+                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Create Account
+              </button>
+            </div>
+
+            {/* Error & Success Notification Banners */}
+            {errorMessage && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+                <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{errorMessage}</span>
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mb-5 p-3.5 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-emerald-200 text-xs flex items-start gap-2.5 animate-in fade-in">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{successMessage}</span>
+              </div>
+            )}
+
+            {/* Cloud Server Cold-Start Helper Note */}
+            {isSlowResponse && (
+              <div className="mb-5 p-3 rounded-2xl bg-amber-950/50 border border-amber-800/60 text-amber-200 text-[11px] flex items-start gap-2 animate-in fade-in">
+                <Loader2 size={14} className="text-amber-400 animate-spin shrink-0 mt-0.5" />
+                <span>Cloud server is waking up from idle mode (~20s). Please remain on this screen...</span>
+              </div>
+            )}
+
+            {/* Tab 1: SIGN IN FORM */}
+            {mode === 'LOGIN' && (
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Username or Email
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <UserIcon size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      placeholder="e.g. student or alex@melodyforge.com"
+                      autoComplete="username"
+                      required
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                      Password
+                    </label>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <Lock size={16} />
+                    </div>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      required
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 transition-colors cursor-pointer"
+                      title={showPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Remember Credentials Toggle */}
+                <div className="flex items-center justify-between pt-1 pb-1">
+                  <label
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none"
+                  >
+                    {rememberMe ? (
+                      <CheckSquare size={16} className="text-indigo-400" />
+                    ) : (
+                      <Square size={16} className="text-slate-600" />
+                    )}
+                    <span>Save signed credentials for later</span>
+                  </label>
+                </div>
+
+                {/* Sign In Submit Button */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="w-full justify-center"
+                  isLoading={isSubmitting}
+                  rightIcon={<ArrowRight size={16} />}
+                >
+                  Sign In to MelodyForge
+                </Button>
+              </form>
+            )}
+
+            {/* Tab 2: CREATE ACCOUNT FORM */}
+            {mode === 'REGISTER' && (
+              <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                    Display Name
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                      <UserIcon size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      placeholder="e.g. Wolfgang Mozart"
+                      required
+                      className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={regUsername}
+                      onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      placeholder="e.g. pianist99"
+                      required
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                      placeholder="name@domain.com"
+                      required
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      placeholder="Min 6 characters"
+                      required
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                      Confirm Password
+                    </label>
+                    <input
+                      type="password"
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      placeholder="Repeat password"
+                      required
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Remember Me */}
+                <div className="pt-1">
+                  <label
+                    onClick={() => setRememberMe(!rememberMe)}
+                    className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer select-none"
+                  >
+                    {rememberMe ? (
+                      <CheckSquare size={16} className="text-indigo-400" />
+                    ) : (
+                      <Square size={16} className="text-slate-600" />
+                    )}
+                    <span>Save signed credentials on this device</span>
+                  </label>
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="lg"
+                  className="w-full justify-center mt-2"
+                  isLoading={isSubmitting}
+                  rightIcon={<ArrowRight size={16} />}
+                >
+                  Create Account & Start Learning
+                </Button>
+              </form>
+            )}
+
+            {/* Quick Demo Credentials Card */}
+            <div className="mt-6 pt-6 border-t border-slate-800/80">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
+                  <ShieldCheck size={14} className="text-amber-400" />
+                  Instant Demo Credentials
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">1-Click Sign In</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {/* Student Demo Button */}
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleQuickDemo('student', 'student123')}
+                  className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 text-left transition-all cursor-pointer group disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                      Student Learner
+                    </span>
+                    <span className="text-[9px] font-extrabold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                      Level 2
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    User: <strong className="text-slate-300">student</strong> / <strong className="text-slate-300">student123</strong>
+                  </div>
+                </button>
+
+                {/* Admin Demo Button */}
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => handleQuickDemo('admin', 'admin123')}
+                  className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 hover:bg-purple-950/20 text-left transition-all cursor-pointer group disabled:opacity-50"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
+                      Administrator
+                    </span>
+                    <span className="text-[9px] font-extrabold bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
+                      ROLE_ADMIN
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    User: <strong className="text-slate-300">admin</strong> / <strong className="text-slate-300">admin123</strong>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthPage } from './components/Auth/AuthPage';
 import { Sidebar, NavigationTab } from './components/navigation/Sidebar';
 import { Header } from './components/navigation/Header';
 import { StudentDashboard } from './components/Dashboard/StudentDashboard';
@@ -18,7 +19,7 @@ import { Button } from './components/ui/Button';
 import { Music, Sparkles } from 'lucide-react';
 
 const MainApp: React.FC = () => {
-  const { user, login } = useAuth();
+  const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<NavigationTab>('DASHBOARD');
   const [selectedInstrument, setSelectedInstrument] = useState<string>('piano');
   const [activeLessonId, setActiveLessonId] = useState<number | null>(null);
@@ -42,6 +43,25 @@ const MainApp: React.FC = () => {
       setIsViewingHistory(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 selection:bg-indigo-500 selection:text-white">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
+          <Music size={28} />
+        </div>
+        <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3" />
+        <p className="text-xs font-semibold text-slate-400 tracking-wide uppercase">
+          Loading MelodyForge Studio...
+        </p>
+      </div>
+    );
+  }
+
+  // Dedicated full-screen authentication portal when unauthenticated
+  if (!user) {
+    return <AuthPage />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans selection:bg-indigo-500 selection:text-white">
@@ -78,36 +98,13 @@ const MainApp: React.FC = () => {
 
         {/* Dynamic Page Content Viewport */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-          {/* Sign In Prompt for unauthenticated visitors */}
-          {!user && (
-            <div className="max-w-md mx-auto my-16 bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
-                <Music size={28} />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Welcome to MelodyForge</h2>
-              <p className="text-xs sm:text-sm text-slate-400 mb-6 leading-relaxed">
-                Professional Gamified Multi-Instrument Music Learning Management System
-              </p>
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-full"
-                onClick={() => login('student', 'student123')}
-              >
-                Sign In as Alex Rivera (Student)
-              </Button>
-            </div>
+          {/* TAB 1: Student Dashboard */}
+          {activeTab === 'DASHBOARD' && (
+            <StudentDashboard
+              onNavigate={handleTabChange}
+              onLaunchLesson={handleLaunchLesson}
+            />
           )}
-
-          {user && (
-            <>
-              {/* TAB 1: Student Dashboard */}
-              {activeTab === 'DASHBOARD' && (
-                <StudentDashboard
-                  onNavigate={handleTabChange}
-                  onLaunchLesson={handleLaunchLesson}
-                />
-              )}
 
               {/* TAB 2: Multi-Instrument Catalog */}
               {activeTab === 'INSTRUMENTS' && (
@@ -202,9 +199,7 @@ const MainApp: React.FC = () => {
               {activeTab === 'ADMIN' && (
                 <AdminPortal />
               )}
-            </>
-          )}
-        </main>
+            </main>
 
         {/* Global Application Footer */}
         <footer className="border-t border-slate-800/80 bg-slate-950 py-6 px-4 sm:px-6 lg:px-8 mt-auto text-xs text-slate-500">
