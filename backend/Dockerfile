@@ -22,8 +22,8 @@ USER spring:spring
 # Copy built artifact
 COPY --from=builder /app/target/*.jar app.jar
 
-# Cloud platform port binding
-ENV PORT=8080
-EXPOSE 8080
+# Cloud platform port binding (Render default is 10000)
+ENV PORT=10000
+EXPOSE 10000
 
-ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8080} -Djava.security.egd=file:/dev/./urandom -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-10000} -Djava.security.egd=file:/dev/./urandom -jar app.jar"]
