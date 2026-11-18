@@ -195,9 +195,27 @@ const MainApp: React.FC = () => {
                 <MyProgressView />
               )}
 
-              {/* TAB 10: Admin Management Portal */}
+              {/* TAB 10: Admin Management Portal (Strictly guarded for single administrative credential) */}
               {activeTab === 'ADMIN' && (
-                <AdminPortal />
+                user?.role === 'ROLE_ADMIN' ? (
+                  <AdminPortal />
+                ) : (
+                  <div className="max-w-md mx-auto my-16 bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl">
+                    <div className="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto mb-4">
+                      <Music size={24} />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">Access Denied</h2>
+                    <p className="text-xs text-slate-400 mb-6">
+                      Administrative access is strictly restricted to the authorized platform administrator.
+                    </p>
+                    <Button
+                      variant="primary"
+                      onClick={() => handleTabChange('DASHBOARD')}
+                    >
+                      Return to Student Dashboard
+                    </Button>
+                  </div>
+                )
               )}
             </main>
 

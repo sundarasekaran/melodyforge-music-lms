@@ -1,4 +1,5 @@
-// Web Audio API & Synthesis Engine for Multi-Instrument LMS
+// Web Audio API & Multi-Harmonic Acoustic Synthesis Engine
+// Fully compatible with iOS Safari (WebKit), Android Chrome, and Desktop browsers
 
 export interface NoteInfo {
   note: string;       // e.g. "C4"
@@ -12,6 +13,7 @@ export interface NoteInfo {
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
+  private isUnlocked: boolean = false;
   private mediaRecorder: MediaRecorder | null = null;
   private recordedChunks: Blob[] = [];
   private recordingDestination: MediaStreamAudioDestinationNode | null = null;
@@ -21,21 +23,58 @@ class AudioEngine {
   private initContext() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      if (!AudioCtx) {
+        console.warn('Web Audio API is not supported on this browser.');
+        return;
+      }
       this.ctx = new AudioCtx();
 
       // Master output gain
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(0.7, this.ctx.currentTime);
+      this.masterGain.gain.setValueAtTime(0.75, this.ctx.currentTime);
       this.masterGain.connect(this.ctx.destination);
 
       // Create stream destination for recording pure audio
       if (typeof this.ctx.createMediaStreamDestination === 'function') {
-        this.recordingDestination = this.ctx.createMediaStreamDestination();
-        this.masterGain.connect(this.recordingDestination);
+        try {
+          this.recordingDestination = this.ctx.createMediaStreamDestination();
+          this.masterGain.connect(this.recordingDestination);
+        } catch (e) {
+          console.warn('MediaStreamAudioDestinationNode unsupported on this device', e);
+        }
       }
     }
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
+  }
+
+  /**
+   * Unlock Web Audio hardware specifically for iOS Safari and mobile browsers.
+   * On iOS, AudioContext starts suspended and must be unlocked inside a direct user gesture.
+   */
+  public async unlockAudio(): Promise<boolean> {
+    try {
+      this.initContext();
+      if (!this.ctx) return false;
+
+      if (this.ctx.state === 'suspended') {
+        await this.ctx.resume();
+      }
+
+      // Play a 1-sample silent buffer to force iOS WebKit audio hardware to engage
+      const buffer = this.ctx.createBuffer(1, 1, 22050);
+      const source = this.ctx.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.ctx.destination);
+      source.start(0);
+
+      this.isUnlocked = true;
+      return true;
+    } catch (e) {
+      console.warn('Audio unlock warning:', e);
+      return false;
     }
   }
 
@@ -63,9 +102,13 @@ class AudioEngine {
   }
 
   // Play a note (press down) with realistic acoustic piano harmonics & envelope
-  public startNote(note: string, velocity = 0.8) {
+  public startNote(note: string, velocity = 0.85) {
     this.initContext();
     if (!this.ctx || !this.masterGain) return;
+
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
 
     // Release any existing voice on this pitch
     this.stopNote(note);
@@ -97,7 +140,7 @@ class AudioEngine {
     voiceGain.gain.linearRampToValueAtTime(peakGain, now + 0.008); // Sharp percussive hammer strike
     voiceGain.gain.exponentialRampToValueAtTime(peakGain * 0.4, now + 0.35); // Initial decay
 
-    // Connect audio routing
+    // Audio routing
     osc1.connect(voiceGain);
     osc2.connect(voiceGain);
     voiceGain.connect(filter);
@@ -116,18 +159,20 @@ class AudioEngine {
     if (!voice) return;
 
     const now = this.ctx.currentTime;
-    // Felt damper drops on string (exponential release)
-    voice.gain.gain.cancelScheduledValues(now);
-    voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
-    voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
+    try {
+      // Felt damper drops on string (exponential release)
+      voice.gain.gain.cancelScheduledValues(now);
+      voice.gain.gain.setValueAtTime(voice.gain.gain.value, now);
+      voice.gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.25);
 
-    voice.osc1.stop(now + 0.3);
-    voice.osc2.stop(now + 0.3);
+      voice.osc1.stop(now + 0.3);
+      voice.osc2.stop(now + 0.3);
+    } catch {}
 
     this.activeVoices.delete(note);
   }
 
-  // Play a note for a set duration (convenience for ear training & exercise demo)
+  // Play a note for a set duration (for ear training & lesson demos)
   public playNote(note: string, durationSeconds = 0.8, velocity = 0.8): Promise<void> {
     return new Promise((resolve) => {
       this.startNote(note, velocity);
@@ -148,20 +193,44 @@ class AudioEngine {
   // Play a melodic sequence (e.g. C-D-E-F-G)
   public async playSequence(notes: string[], intervalMs = 400): Promise<void> {
     for (const note of notes) {
-      await this.playNote(note, intervalMs / 1000 * 0.85);
+      await this.playNote(note, (intervalMs / 1000) * 0.85);
       await new Promise((r) => setTimeout(r, intervalMs * 0.15));
     }
   }
 
-  // --- AUDIO RECORDING CAPABILITIES ---
+  // --- AUDIO RECORDING CAPABILITIES WITH IOS MP4 & ANDROID/DESKTOP WEBM SUPPORT ---
+  private getSupportedMimeType(): string {
+    if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+      return '';
+    }
+    const candidates = [
+      'audio/mp4',
+      'audio/aac',
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus'
+    ];
+    for (const c of candidates) {
+      if (MediaRecorder.isTypeSupported(c)) return c;
+    }
+    return '';
+  }
+
   public startRecording(): boolean {
     this.initContext();
     if (!this.recordingDestination) return false;
 
+    if (typeof MediaRecorder === 'undefined') {
+      console.warn('MediaRecorder is not available on this browser/environment.');
+      return false;
+    }
+
     try {
       this.recordedChunks = [];
       const stream = this.recordingDestination.stream;
-      this.mediaRecorder = new MediaRecorder(stream);
+      const mime = this.getSupportedMimeType();
+      
+      this.mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event.data && event.data.size > 0) {
@@ -172,7 +241,7 @@ class AudioEngine {
       this.mediaRecorder.start();
       return true;
     } catch (e) {
-      console.error('Failed to start MediaRecorder', e);
+      console.error('Failed to start MediaRecorder on this device', e);
       return false;
     }
   }
@@ -185,7 +254,8 @@ class AudioEngine {
       }
 
       this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+        const mimeType = this.mediaRecorder?.mimeType || this.getSupportedMimeType() || 'audio/mp4';
+        const audioBlob = new Blob(this.recordedChunks, { type: mimeType });
         const audioUrl = URL.createObjectURL(audioBlob);
         resolve(audioUrl);
       };

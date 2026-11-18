@@ -31,7 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedInstrument,
   onInstrumentChange,
 }) => {
-  const { user, logout, switchDemoAccount } = useAuth();
+  const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showInstMenu, setShowInstMenu] = useState(false);
 
@@ -214,38 +214,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {user?.role}
                   </span>
                 </div>
-
-                <span className="block px-2 py-1 text-[10px] uppercase font-bold text-slate-500">
-                  Switch Demo Account
-                </span>
-
-                <button
-                  onClick={() => {
-                    switchDemoAccount('STUDENT');
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full text-left p-2 rounded-lg hover:bg-slate-800 flex items-center justify-between text-slate-300 cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <UserIcon size={14} className="text-indigo-400" />
-                    <span>Alex Rivera (Student)</span>
-                  </span>
-                  {user?.role === 'ROLE_STUDENT' && <span className="text-emerald-400 font-bold">✓</span>}
-                </button>
-
-                <button
-                  onClick={() => {
-                    switchDemoAccount('ADMIN');
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full text-left p-2 rounded-lg hover:bg-slate-800 flex items-center justify-between text-slate-300 cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <Shield size={14} className="text-purple-400" />
-                    <span>Platform Admin</span>
-                  </span>
-                  {user?.role === 'ROLE_ADMIN' && <span className="text-emerald-400 font-bold">✓</span>}
-                </button>
 
                 <div className="border-t border-slate-800 mt-1 pt-1">
                   <button

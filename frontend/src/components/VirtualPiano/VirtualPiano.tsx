@@ -246,16 +246,20 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
             return (
               <div
                 key={k.note}
-                onMouseDown={() => handleNotePress(k.note)}
-                onMouseUp={() => handleNoteRelease(k.note)}
-                onMouseLeave={() => activeNotes.has(k.note) && handleNoteRelease(k.note)}
-                onTouchStart={(e) => {
+                onContextMenu={(e) => e.preventDefault()}
+                onPointerDown={(e) => {
                   e.preventDefault();
                   handleNotePress(k.note);
                 }}
-                onTouchEnd={(e) => {
+                onPointerUp={(e) => {
                   e.preventDefault();
                   handleNoteRelease(k.note);
+                }}
+                onPointerLeave={() => {
+                  if (activeNotes.has(k.note)) handleNoteRelease(k.note);
+                }}
+                onPointerCancel={() => {
+                  if (activeNotes.has(k.note)) handleNoteRelease(k.note);
                 }}
                 className={`piano-white-key relative w-11 sm:w-13 md:w-14 h-48 sm:h-56 md:h-60 rounded-b-xl flex flex-col justify-end items-center pb-3 cursor-pointer select-none ${
                   isActive
@@ -308,16 +312,20 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
               <div
                 key={k.note}
                 style={{ left: leftOffset }}
-                onMouseDown={() => handleNotePress(k.note)}
-                onMouseUp={() => handleNoteRelease(k.note)}
-                onMouseLeave={() => activeNotes.has(k.note) && handleNoteRelease(k.note)}
-                onTouchStart={(e) => {
+                onContextMenu={(e) => e.preventDefault()}
+                onPointerDown={(e) => {
                   e.preventDefault();
                   handleNotePress(k.note);
                 }}
-                onTouchEnd={(e) => {
+                onPointerUp={(e) => {
                   e.preventDefault();
                   handleNoteRelease(k.note);
+                }}
+                onPointerLeave={() => {
+                  if (activeNotes.has(k.note)) handleNoteRelease(k.note);
+                }}
+                onPointerCancel={() => {
+                  if (activeNotes.has(k.note)) handleNoteRelease(k.note);
                 }}
                 className={`piano-black-key absolute top-3 sm:top-4 z-10 w-7 sm:w-8 md:w-8.5 h-30 sm:h-34 md:h-36 rounded-b-lg cursor-pointer select-none flex flex-col justify-end items-center pb-2.5 ${
                   isActive

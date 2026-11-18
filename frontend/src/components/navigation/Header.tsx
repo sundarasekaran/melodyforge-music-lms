@@ -5,8 +5,6 @@ import {
   Flame,
   Zap,
   ChevronDown,
-  User as UserIcon,
-  Shield,
   LogOut,
   Bell,
   Search,
@@ -28,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   onMobileMenuToggle,
   breadcrumb,
 }) => {
-  const { user, logout, switchDemoAccount } = useAuth();
+  const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showInstMenu, setShowInstMenu] = useState(false);
 
@@ -159,42 +157,25 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="p-3 border-b border-slate-800 mb-1">
                 <p className="font-bold text-white truncate">{user?.displayName}</p>
                 <p className="text-[11px] text-slate-400 truncate">{user?.email}</p>
-                <span className="inline-block mt-1 text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-400 border border-indigo-800">
-                  {user?.role}
+                <span className={`inline-block mt-1 text-[9px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded ${
+                  user?.role === 'ROLE_ADMIN' 
+                    ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                    : 'bg-indigo-950 text-indigo-400 border border-indigo-800'
+                }`}>
+                  {user?.role === 'ROLE_ADMIN' ? 'Platform Administrator' : 'Student Learner'}
                 </span>
               </div>
 
-              <span className="block px-3 py-1 text-[10px] uppercase font-bold text-slate-500">
-                Switch Role / Account
-              </span>
-
-              <button
-                onClick={() => {
-                  switchDemoAccount('STUDENT');
-                  setShowUserMenu(false);
-                }}
-                className="w-full text-left p-2 rounded-xl hover:bg-slate-800 flex items-center justify-between text-slate-300 cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <UserIcon size={14} className="text-indigo-400" />
-                  <span>Alex Rivera (Student)</span>
-                </span>
-                {user?.role === 'ROLE_STUDENT' && <span className="text-emerald-400 font-bold">✓</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  switchDemoAccount('ADMIN');
-                  setShowUserMenu(false);
-                }}
-                className="w-full text-left p-2 rounded-xl hover:bg-slate-800 flex items-center justify-between text-slate-300 cursor-pointer"
-              >
-                <span className="flex items-center gap-2">
-                  <Shield size={14} className="text-purple-400" />
-                  <span>Platform Administrator</span>
-                </span>
-                {user?.role === 'ROLE_ADMIN' && <span className="text-emerald-400 font-bold">✓</span>}
-              </button>
+              <div className="p-2 space-y-1 text-slate-400 text-[11px]">
+                <div className="flex justify-between py-1">
+                  <span>Current Level:</span>
+                  <span className="font-bold text-white">Level {user?.currentLevel || 1}</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span>Total XP:</span>
+                  <span className="font-bold text-amber-400">{user?.totalXp || 0} XP</span>
+                </div>
+              </div>
 
               <div className="border-t border-slate-800 mt-1 pt-1">
                 <button

@@ -10,7 +10,6 @@ interface AuthContextType {
   login: (usernameOrEmail: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (email: string, username: string, displayName: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => void;
-  switchDemoAccount: (role: 'STUDENT' | 'ADMIN') => Promise<void>;
   refreshUser: () => Promise<void>;
   awardLocalXp: (xp: number) => void;
 }
@@ -155,14 +154,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Note: savedUsername is retained in localStorage so the user can easily re-login
   };
 
-  const switchDemoAccount = async (role: 'STUDENT' | 'ADMIN') => {
-    if (role === 'STUDENT') {
-      await login('student', 'student123', true);
-    } else {
-      await login('admin', 'admin123', true);
-    }
-  };
-
   const refreshUser = async () => {
     await verifyAndRefreshUser();
   };
@@ -191,7 +182,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
-        switchDemoAccount,
         refreshUser,
         awardLocalXp,
       }}

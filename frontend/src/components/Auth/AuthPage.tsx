@@ -484,57 +484,39 @@ export const AuthPage: React.FC = () => {
               </form>
             )}
 
-            {/* Quick Demo Credentials Card */}
+            {/* Quick Demo Credentials Card (Student Only - No Admin Access) */}
             <div className="mt-6 pt-6 border-t border-slate-800/80">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[11px] uppercase tracking-wider font-extrabold text-slate-400 flex items-center gap-1.5">
                   <ShieldCheck size={14} className="text-amber-400" />
-                  Instant Demo Credentials
+                  Student Demo Access
                 </span>
                 <span className="text-[10px] text-slate-500 font-medium">1-Click Sign In</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {/* Student Demo Button */}
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleQuickDemo('student', 'student123')}
-                  className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 text-left transition-all cursor-pointer group disabled:opacity-50"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
-                      Student Learner
-                    </span>
-                    <span className="text-[9px] font-extrabold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
-                      Level 2
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-mono">
-                    User: <strong className="text-slate-300">student</strong> / <strong className="text-slate-300">student123</strong>
-                  </div>
-                </button>
+              {/* Student Demo Button */}
+              <button
+                type="button"
+                disabled={isSubmitting}
+                onClick={() => handleQuickDemo('student', 'student123')}
+                className="w-full p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/50 hover:bg-indigo-950/20 text-left transition-all cursor-pointer group disabled:opacity-50"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">
+                    Alex Rivera (Student Learner)
+                  </span>
+                  <span className="text-[9px] font-extrabold bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded">
+                    Level 2 • 250 XP
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-mono">
+                  User: <strong className="text-slate-300">student</strong> / <strong className="text-slate-300">student123</strong>
+                </div>
+              </button>
 
-                {/* Admin Demo Button */}
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => handleQuickDemo('admin', 'admin123')}
-                  className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 hover:border-purple-500/50 hover:bg-purple-950/20 text-left transition-all cursor-pointer group disabled:opacity-50"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">
-                      Administrator
-                    </span>
-                    <span className="text-[9px] font-extrabold bg-purple-500/20 text-purple-300 px-1.5 py-0.5 rounded">
-                      ROLE_ADMIN
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-400 font-mono">
-                    User: <strong className="text-slate-300">admin</strong> / <strong className="text-slate-300">admin123</strong>
-                  </div>
-                </button>
-              </div>
+              <p className="text-[10px] text-slate-500 text-center mt-3">
+                🔒 Administrative access is strictly restricted to authorized platform administrator credentials.
+              </p>
             </div>
           </div>
         </div>
