@@ -11,7 +11,11 @@ import {
   LeaderboardEntry 
 } from '../types';
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api/v1';
+const DEFAULT_API_URL = import.meta.env.PROD 
+  ? 'https://melodyforge-music-lms-backend.onrender.com' 
+  : '';
+
+const API_BASE = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '') + '/api/v1';
 
 class ApiService {
   private token: string | null = null;

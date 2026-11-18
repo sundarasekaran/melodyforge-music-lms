@@ -12,8 +12,9 @@ A web-based, gamified music learning platform architected for multi-instrument e
 ## 🌐 Live Deployments
 
 - **Frontend (GitHub Pages)**: [https://sundarasekaran.github.io/melodyforge-music-lms/](https://sundarasekaran.github.io/melodyforge-music-lms/)
+- **Backend (Render API)**: [https://melodyforge-music-lms-backend.onrender.com](https://melodyforge-music-lms-backend.onrender.com)
+- **Backend Health Check**: [https://melodyforge-music-lms-backend.onrender.com/api/v1/health](https://melodyforge-music-lms-backend.onrender.com/api/v1/health)
 - **Frontend (Vercel)**: Connect repository to Vercel (pre-configured via `vercel.json`).
-- **Backend (Render)**: Deploy with 1-click Blueprint via `render.yaml` or Dockerfile.
 
 ---
 
