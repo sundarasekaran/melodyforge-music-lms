@@ -1,11 +1,28 @@
 # MelodyForge: Gamified Multi-Instrument Music Learning Management System (LMS)
 
 [![Deploy Frontend to GitHub Pages](https://github.com/sundarasekaran/melodyforge-music-lms/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/sundarasekaran/melodyforge-music-lms/actions/workflows/deploy-pages.yml)
+[![Build Android APK](https://github.com/sundarasekaran/melodyforge-music-lms/actions/workflows/build-apk.yml/badge.svg)](https://github.com/sundarasekaran/melodyforge-music-lms/actions/workflows/build-apk.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen?style=flat&logo=github)](https://sundarasekaran.github.io/melodyforge-music-lms/)
+[![Android APK](https://img.shields.io/badge/Download-Android%20APK-3DDC84?style=flat&logo=android&logoColor=white)](https://github.com/sundarasekaran/melodyforge-music-lms/releases/latest)
+[![iOS App](https://img.shields.io/badge/iOS-PWA%20%2F%20Xcode-black?style=flat&logo=apple&logoColor=white)](https://sundarasekaran.github.io/melodyforge-music-lms/)
 [![Backend](https://img.shields.io/badge/Backend-Render%20%7C%20Spring%20Boot%203-blue?style=flat&logo=render)](https://render.com)
 [![Frontend](https://img.shields.io/badge/Frontend-Vercel%20%7C%20React%2019-black?style=flat&logo=vercel)](https://vercel.com)
 
 A web-based, gamified music learning platform architected for multi-instrument education, featuring **Piano / Keyboard** as its flagship instrument, with modular support for **Guitar, Violin, and Drums**.
+
+---
+
+## 📱 Mobile Applications (Android & iOS)
+
+MelodyForge is packaged with **Capacitor** and **PWA** to run natively on both **Android** and **iOS**:
+
+- **🤖 Android APK**:
+  - Download the latest standalone **`MelodyForge.apk`** from [GitHub Releases](https://github.com/sundarasekaran/melodyforge-music-lms/releases/latest).
+  - Tap on the downloaded APK on your Android device to install.
+  - Or build locally: `npm run build:mobile` and open in Android Studio (`npm run cap:android`).
+- **🍎 iOS (iPhone & iPad)**:
+  - **Instant 1-Tap Install (PWA)**: Open [https://sundarasekaran.github.io/melodyforge-music-lms/](https://sundarasekaran.github.io/melodyforge-music-lms/) in Safari on iOS $\rightarrow$ tap the **Share** button $\rightarrow$ select **"Add to Home Screen"**. It installs as a standalone fullscreen app with its own icon, hardware audio unlock, and offline caching.
+  - **Native Xcode Project**: The native iOS project is located at `frontend/ios/`. Open in Xcode via `npm run cap:ios` to compile for TestFlight or iOS App Store.
 
 ---
 

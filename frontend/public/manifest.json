@@ -1,0 +1,18 @@
+{
+  "short_name": "MelodyForge",
+  "name": "MelodyForge Music Academy",
+  "description": "Gamified Multi-Instrument Music Learning Management System",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512 any",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#080C14",
+  "background_color": "#080C14"
+}

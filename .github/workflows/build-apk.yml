@@ -1,0 +1,89 @@
+name: Build Android APK & Mobile App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/build-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: Build Web Application
+        run: npm run build
+        env:
+          VITE_API_URL: https://melodyforge-music-lms-backend.onrender.com
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Rename and Prepare APK
+        run: |
+          mkdir -p output
+          cp android/app/build/outputs/apk/debug/app-debug.apk output/MelodyForge.apk
+
+      - name: Upload APK as Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MelodyForge-Android-APK
+          path: frontend/output/MelodyForge.apk
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish Android APK Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main'
+        with:
+          tag_name: v1.0.0-mobile
+          name: "MelodyForge Mobile Release (Android APK & iOS/PWA)"
+          body: |
+            ### 📱 MelodyForge Mobile App
+            
+            This release contains the mobile app package for MelodyForge:
+            - **Android**: Download `MelodyForge.apk` below and tap to install on any Android phone or tablet.
+            - **iOS**: Available as an installable standalone app via Safari ("Add to Home Screen") or by building the included Xcode project in `frontend/ios/`.
+            
+            **Connected Backend**: `https://melodyforge-music-lms-backend.onrender.com`
+          files: frontend/output/MelodyForge.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

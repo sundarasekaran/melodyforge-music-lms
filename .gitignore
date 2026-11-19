@@ -20,6 +20,18 @@ backend/target/
 *.war
 *.ear
 
+# Mobile / Capacitor build outputs
+.gradle/
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+frontend/ios/App/build/
+frontend/ios/App/Pods/
+frontend/output/
+*.apk
+*.aab
+*.ipa
+
 # Logs
 logs/
 *.log
