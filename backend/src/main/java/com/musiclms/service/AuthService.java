@@ -8,6 +8,7 @@ import com.musiclms.model.entity.User;
 import com.musiclms.repository.UserRepository;
 import com.musiclms.security.JwtTokenProvider;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,19 +36,25 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email is already registered");
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new IllegalArgumentException("Email address is required.");
         }
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username is already taken");
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Username is required.");
+        }
+        if (userRepository.existsByEmail(request.getEmail().trim())) {
+            throw new IllegalArgumentException("Email address '" + request.getEmail().trim() + "' is already registered. Please sign in or use a different email.");
+        }
+        if (userRepository.existsByUsername(request.getUsername().trim())) {
+            throw new IllegalArgumentException("Username '" + request.getUsername().trim() + "' is already taken. Please choose another username.");
         }
 
         String displayName = (request.getDisplayName() != null && !request.getDisplayName().isBlank())
-                ? request.getDisplayName() : request.getUsername();
+                ? request.getDisplayName().trim() : request.getUsername().trim();
 
         User user = new User(
-                request.getEmail(),
-                request.getUsername(),
+                request.getEmail().trim(),
+                request.getUsername().trim(),
                 displayName,
                 passwordEncoder.encode(request.getPassword()),
                 Role.ROLE_STUDENT
@@ -60,18 +67,34 @@ public class AuthService {
     }
 
     public AuthResponse login(AuthRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsernameOrEmail(), request.getPassword())
-        );
+        String identifier = request.getUsernameOrEmail() != null ? request.getUsernameOrEmail().trim() : "";
+        if (identifier.isEmpty()) {
+            throw new IllegalArgumentException("Please enter your username or email address.");
+        }
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Please enter your password.");
+        }
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = tokenProvider.generateToken(authentication);
+        // Check user existence first to provide clear, actionable feedback
+        Optional<User> userOpt = userRepository.findByUsername(identifier)
+                .or(() -> userRepository.findByEmail(identifier));
 
-        User user = userRepository.findByUsername(authentication.getName())
-                .or(() -> userRepository.findByEmail(authentication.getName()))
-                .orElseThrow(() -> new IllegalStateException("User not found"));
+        if (userOpt.isEmpty()) {
+            throw new BadCredentialsException("No account found with username or email '" + identifier + "'. Please check spelling or create an account.");
+        }
 
-        return toAuthResponse(token, user);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(userOpt.get().getUsername(), request.getPassword())
+            );
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = tokenProvider.generateToken(authentication);
+
+            return toAuthResponse(token, userOpt.get());
+        } catch (BadCredentialsException ex) {
+            throw new BadCredentialsException("Incorrect password for account '" + identifier + "'. Please verify and try again.");
+        }
     }
 
     @Transactional(readOnly = true)

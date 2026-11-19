@@ -54,13 +54,49 @@ class ApiService {
       });
 
       if (!res.ok) {
-        const errorBody = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(errorBody.message || `Request failed with status ${res.status}`);
+        let errorData: any = null;
+        try {
+          errorData = await res.json();
+        } catch {
+          errorData = null;
+        }
+
+        const msg =
+          errorData?.message ||
+          errorData?.error ||
+          (res.status === 401 ? 'Invalid username or password. Please verify your credentials.' : '') ||
+          (res.status === 403 ? 'Access forbidden. Please check your credentials or permissions.' : '') ||
+          (res.status === 404 ? 'User or requested resource was not found.' : '') ||
+          (res.status >= 500 ? 'MelodyForge server is starting up or temporarily busy. Please wait a moment and try again.' : '') ||
+          res.statusText ||
+          `Request failed with status ${res.status}`;
+
+        const err: any = new Error(msg);
+        err.status = res.status;
+        err.data = errorData;
+        throw err;
       }
 
       return (await res.json()) as T;
-    } catch (err) {
-      console.warn(`API call ${endpoint} failed or offline:`, err);
+    } catch (err: any) {
+      console.warn(`API call ${endpoint} failed:`, err);
+      if (err.status) {
+        throw err;
+      }
+      const isNetwork =
+        err instanceof TypeError ||
+        String(err?.message || '').toLowerCase().includes('failed to fetch') ||
+        String(err?.message || '').toLowerCase().includes('network') ||
+        String(err?.message || '').toLowerCase().includes('load failed');
+
+      if (isNetwork) {
+        const netErr: any = new Error(
+          'Network connection error: Unable to reach MelodyForge server. Please check your internet connection or verify the server status.'
+        );
+        netErr.status = 0;
+        netErr.isNetwork = true;
+        throw netErr;
+      }
       throw err;
     }
   }

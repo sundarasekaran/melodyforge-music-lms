@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   Music,
@@ -16,10 +16,22 @@ import {
   BookOpen,
   Award,
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   Loader2,
+  WifiOff,
+  KeyRound,
+  UserX,
+  X,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+
+interface AuthErrorDetails {
+  title: string;
+  message: string;
+  field?: 'identifier' | 'password' | 'email' | 'username' | 'confirmPassword' | 'network' | 'general';
+  type: 'CREDENTIALS' | 'NOT_FOUND' | 'NETWORK' | 'VALIDATION' | 'SERVER';
+}
 
 export const AuthPage: React.FC = () => {
   const { login, register, savedUsername } = useAuth();
@@ -41,9 +53,11 @@ export const AuthPage: React.FC = () => {
 
   // UI status state
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [authError, setAuthError] = useState<AuthErrorDetails | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSlowResponse, setIsSlowResponse] = useState(false);
+
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Sync remembered username when available
   useEffect(() => {
@@ -65,18 +79,154 @@ export const AuthPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [isSubmitting]);
 
+  // Trigger error with haptics & scroll into view on mobile
+  const triggerError = (details: AuthErrorDetails) => {
+    setAuthError(details);
+    if (typeof window !== 'undefined' && 'navigator' in window && window.navigator.vibrate) {
+      try { window.navigator.vibrate([40, 60, 40]); } catch {}
+    }
+    setTimeout(() => {
+      errorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 50);
+  };
+
+  const parseAuthError = (err: any, currentMode: 'LOGIN' | 'REGISTER'): AuthErrorDetails => {
+    const rawMsg: string = String(err?.message || err?.data?.message || err || '').trim();
+    const lower = rawMsg.toLowerCase();
+    const status = err?.status;
+
+    // 1. Network / Server Unreachable / Device Offline
+    if (
+      err?.isNetwork ||
+      lower.includes('network') ||
+      lower.includes('failed to fetch') ||
+      lower.includes('load failed') ||
+      lower.includes('offline') ||
+      lower.includes('connection error')
+    ) {
+      return {
+        title: 'Connection Error',
+        message: 'Unable to reach the MelodyForge server. Please check your internet connection or verify the backend server is reachable.',
+        field: 'network',
+        type: 'NETWORK',
+      };
+    }
+
+    // 2. User / Account Not Found
+    if (
+      lower.includes('no user found') ||
+      lower.includes('no account found') ||
+      lower.includes('not found') ||
+      lower.includes('usernotfound') ||
+      status === 404
+    ) {
+      return {
+        title: 'Account Not Found',
+        message: rawMsg || 'No account is registered with this username or email. Please check your spelling or click "Create Account".',
+        field: 'identifier',
+        type: 'NOT_FOUND',
+      };
+    }
+
+    // 3. Incorrect Password / Bad Credentials
+    if (
+      lower.includes('incorrect password') ||
+      lower.includes('bad credentials') ||
+      lower.includes('badcredentials') ||
+      lower.includes('invalid credentials')
+    ) {
+      return {
+        title: 'Incorrect Password',
+        message: rawMsg.includes('Incorrect password')
+          ? rawMsg
+          : 'The password you entered is incorrect. Please verify your password and try again.',
+        field: 'password',
+        type: 'CREDENTIALS',
+      };
+    }
+
+    // 4. Duplicate Email
+    if (
+      lower.includes('email') &&
+      (lower.includes('already registered') ||
+        lower.includes('already taken') ||
+        lower.includes('exists') ||
+        lower.includes('duplicate'))
+    ) {
+      return {
+        title: 'Email Already In Use',
+        message: rawMsg || 'This email address is already registered. Please sign in or use a different email address.',
+        field: 'email',
+        type: 'VALIDATION',
+      };
+    }
+
+    // 5. Duplicate Username
+    if (
+      lower.includes('username') &&
+      (lower.includes('already taken') ||
+        lower.includes('already registered') ||
+        lower.includes('exists'))
+    ) {
+      return {
+        title: 'Username Already Taken',
+        message: rawMsg || 'This username is already taken. Please choose another username.',
+        field: 'username',
+        type: 'VALIDATION',
+      };
+    }
+
+    // 6. Generic 401 / 403 on Login
+    if (currentMode === 'LOGIN' && (status === 401 || status === 403)) {
+      return {
+        title: 'Sign In Failed',
+        message: 'Invalid username or password. Please verify your credentials and try again.',
+        field: 'general',
+        type: 'CREDENTIALS',
+      };
+    }
+
+    // 7. Cloud Server 500 / 502 / 503 / 504
+    if (status >= 500 || lower.includes('500') || lower.includes('502') || lower.includes('503')) {
+      return {
+        title: 'Server Error',
+        message: 'The MelodyForge cloud service is starting up or temporarily busy. Please wait a moment and try again.',
+        field: 'general',
+        type: 'SERVER',
+      };
+    }
+
+    // Fallback
+    return {
+      title: currentMode === 'LOGIN' ? 'Sign In Error' : 'Registration Error',
+      message: rawMsg || (currentMode === 'LOGIN' ? 'Sign in failed. Please verify your details.' : 'Registration failed. Please try again.'),
+      field: 'general',
+      type: 'VALIDATION',
+    };
+  };
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setAuthError(null);
     setSuccessMessage(null);
 
     const identifier = loginIdentifier.trim();
     if (!identifier) {
-      setErrorMessage('Please enter your username or email address.');
+      triggerError({
+        title: 'Missing Username or Email',
+        message: 'Please enter your username or email address.',
+        field: 'identifier',
+        type: 'VALIDATION',
+      });
       return;
     }
     if (!loginPassword) {
-      setErrorMessage('Please enter your password.');
+      triggerError({
+        title: 'Missing Password',
+        message: 'Please enter your account password.',
+        field: 'password',
+        type: 'VALIDATION',
+      });
       return;
     }
 
@@ -85,12 +235,7 @@ export const AuthPage: React.FC = () => {
       await login(identifier, loginPassword, rememberMe);
       setSuccessMessage('Welcome back! Loading your music studio...');
     } catch (err: any) {
-      const msg = err?.message || 'Login failed. Please check your credentials and try again.';
-      if (msg.includes('403') || msg.includes('401') || msg.includes('BadCredentials')) {
-        setErrorMessage('Invalid username or password. Please try again.');
-      } else {
-        setErrorMessage(msg);
-      }
+      triggerError(parseAuthError(err, 'LOGIN'));
     } finally {
       setIsSubmitting(false);
     }
@@ -98,7 +243,7 @@ export const AuthPage: React.FC = () => {
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setAuthError(null);
     setSuccessMessage(null);
 
     const name = regName.trim();
@@ -106,23 +251,48 @@ export const AuthPage: React.FC = () => {
     const email = regEmail.trim();
 
     if (!name) {
-      setErrorMessage('Please enter your full name or display name.');
+      triggerError({
+        title: 'Missing Display Name',
+        message: 'Please enter your full name or musician display name.',
+        field: 'general',
+        type: 'VALIDATION',
+      });
       return;
     }
-    if (!username) {
-      setErrorMessage('Please choose a username.');
+    if (!username || username.length < 3) {
+      triggerError({
+        title: 'Invalid Username',
+        message: 'Username must be at least 3 characters long (letters, numbers, underscores).',
+        field: 'username',
+        type: 'VALIDATION',
+      });
       return;
     }
-    if (!email || !email.includes('@')) {
-      setErrorMessage('Please enter a valid email address.');
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      triggerError({
+        title: 'Invalid Email Address',
+        message: 'Please enter a valid email address (e.g. name@domain.com).',
+        field: 'email',
+        type: 'VALIDATION',
+      });
       return;
     }
     if (!regPassword || regPassword.length < 6) {
-      setErrorMessage('Password must be at least 6 characters.');
+      triggerError({
+        title: 'Password Too Short',
+        message: 'Password must be at least 6 characters long.',
+        field: 'password',
+        type: 'VALIDATION',
+      });
       return;
     }
     if (regPassword !== regConfirmPassword) {
-      setErrorMessage('Passwords do not match. Please re-enter.');
+      triggerError({
+        title: 'Passwords Do Not Match',
+        message: 'The confirmation password does not match. Please re-enter your password.',
+        field: 'confirmPassword',
+        type: 'VALIDATION',
+      });
       return;
     }
 
@@ -131,7 +301,7 @@ export const AuthPage: React.FC = () => {
       await register(email, username, name, regPassword, rememberMe);
       setSuccessMessage('Account created successfully! Preparing your musical journey...');
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Registration failed. That username or email may already be taken.');
+      triggerError(parseAuthError(err, 'REGISTER'));
     } finally {
       setIsSubmitting(false);
     }
@@ -141,12 +311,12 @@ export const AuthPage: React.FC = () => {
   const handleQuickDemo = async (user: string, pass: string) => {
     setLoginIdentifier(user);
     setLoginPassword(pass);
-    setErrorMessage(null);
+    setAuthError(null);
     setIsSubmitting(true);
     try {
       await login(user, pass, true);
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Quick demo login failed.');
+      triggerError(parseAuthError(err, 'LOGIN'));
     } finally {
       setIsSubmitting(false);
     }
@@ -241,7 +411,7 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setMode('LOGIN');
-                  setErrorMessage(null);
+                  setAuthError(null);
                   setSuccessMessage(null);
                 }}
                 className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
@@ -256,7 +426,7 @@ export const AuthPage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setMode('REGISTER');
-                  setErrorMessage(null);
+                  setAuthError(null);
                   setSuccessMessage(null);
                 }}
                 className={`py-2 text-xs sm:text-sm font-bold rounded-xl transition-all cursor-pointer ${
@@ -270,10 +440,46 @@ export const AuthPage: React.FC = () => {
             </div>
 
             {/* Error & Success Notification Banners */}
-            {errorMessage && (
-              <div className="mb-5 p-3.5 rounded-2xl bg-rose-950/60 border border-rose-800/80 text-rose-200 text-xs flex items-start gap-2.5 animate-in fade-in">
-                <AlertCircle size={16} className="text-rose-400 shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{errorMessage}</span>
+            {authError && (
+              <div
+                ref={errorRef}
+                role="alert"
+                className="mb-5 p-4 rounded-2xl bg-rose-950/80 border-2 border-rose-500/80 text-rose-100 shadow-xl shadow-rose-950/40 animate-in fade-in slide-in-from-top-2 duration-200"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-xl bg-rose-600/30 text-rose-300 border border-rose-500/50 shrink-0 mt-0.5">
+                      {authError.type === 'NETWORK' ? (
+                        <WifiOff size={18} />
+                      ) : authError.field === 'password' ? (
+                        <KeyRound size={18} />
+                      ) : authError.field === 'identifier' ? (
+                        <UserX size={18} />
+                      ) : (
+                        <AlertCircle size={18} />
+                      )}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider bg-rose-500/30 text-rose-200 px-2 py-0.5 rounded-full border border-rose-400/40">
+                          {authError.title}
+                        </span>
+                      </div>
+                      <p className="text-xs text-rose-100 font-medium leading-relaxed">
+                        {authError.message}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAuthError(null)}
+                    className="p-1 rounded-lg text-rose-300 hover:text-white hover:bg-rose-900/60 transition-colors shrink-0 cursor-pointer"
+                    title="Dismiss error message"
+                    aria-label="Dismiss error"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -306,13 +512,26 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={loginIdentifier}
-                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      onChange={(e) => {
+                        setLoginIdentifier(e.target.value);
+                        if (authError?.field === 'identifier') setAuthError(null);
+                      }}
                       placeholder="e.g. student or alex@melodyforge.com"
                       autoComplete="username"
                       required
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'identifier'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
                   </div>
+                  {authError?.field === 'identifier' && (
+                    <p className="text-[11px] text-rose-400 font-semibold mt-1.5 flex items-center gap-1.5 animate-in fade-in">
+                      <AlertCircle size={13} className="shrink-0" />
+                      <span>{authError.message}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -328,11 +547,18 @@ export const AuthPage: React.FC = () => {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
+                      onChange={(e) => {
+                        setLoginPassword(e.target.value);
+                        if (authError?.field === 'password') setAuthError(null);
+                      }}
                       placeholder="Enter your password"
                       autoComplete="current-password"
                       required
-                      className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full pl-10 pr-10 py-2.5 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'password'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
                     <button
                       type="button"
@@ -343,6 +569,12 @@ export const AuthPage: React.FC = () => {
                       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
                   </div>
+                  {authError?.field === 'password' && (
+                    <p className="text-[11px] text-rose-400 font-semibold mt-1.5 flex items-center gap-1.5 animate-in fade-in">
+                      <AlertCircle size={13} className="shrink-0" />
+                      <span>{authError.message}</span>
+                    </p>
+                  )}
                 </div>
 
                 {/* Remember Credentials Toggle */}
@@ -388,7 +620,10 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
+                      onChange={(e) => {
+                        setRegName(e.target.value);
+                        if (authError?.field === 'general') setAuthError(null);
+                      }}
                       placeholder="e.g. Wolfgang Mozart"
                       required
                       className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
@@ -404,11 +639,24 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={regUsername}
-                      onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                      onChange={(e) => {
+                        setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+                        if (authError?.field === 'username') setAuthError(null);
+                      }}
                       placeholder="e.g. pianist99"
                       required
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'username'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
+                    {authError?.field === 'username' && (
+                      <p className="text-[11px] text-rose-400 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{authError.message}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -418,11 +666,24 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="email"
                       value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
+                      onChange={(e) => {
+                        setRegEmail(e.target.value);
+                        if (authError?.field === 'email') setAuthError(null);
+                      }}
                       placeholder="name@domain.com"
                       required
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'email'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
+                    {authError?.field === 'email' && (
+                      <p className="text-[11px] text-rose-400 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{authError.message}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -434,11 +695,24 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="password"
                       value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
+                      onChange={(e) => {
+                        setRegPassword(e.target.value);
+                        if (authError?.field === 'password') setAuthError(null);
+                      }}
                       placeholder="Min 6 characters"
                       required
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'password'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
+                    {authError?.field === 'password' && (
+                      <p className="text-[11px] text-rose-400 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{authError.message}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -448,11 +722,24 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="password"
                       value={regConfirmPassword}
-                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      onChange={(e) => {
+                        setRegConfirmPassword(e.target.value);
+                        if (authError?.field === 'confirmPassword') setAuthError(null);
+                      }}
                       placeholder="Repeat password"
                       required
-                      className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm text-white placeholder-slate-500 transition-colors"
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-950 border ${
+                        authError?.field === 'confirmPassword'
+                          ? 'border-rose-500 ring-2 ring-rose-500/30 text-rose-100'
+                          : 'border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-white'
+                      } text-sm placeholder-slate-500 transition-colors`}
                     />
+                    {authError?.field === 'confirmPassword' && (
+                      <p className="text-[11px] text-rose-400 font-medium mt-1 flex items-center gap-1 animate-in fade-in">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{authError.message}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
