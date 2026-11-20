@@ -333,18 +333,19 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'LOGIN' }) => 
   };
 
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Smoothly ensure input remains centered and visible above virtual keyboard
+    // Smoothly ensure input remains visible above virtual keyboard without aggressive over-scrolling
+    const target = e.target;
     setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 250);
+      target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
   };
 
   return (
     <div
-      className="min-h-screen min-h-[100dvh] bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white"
+      className="min-h-screen min-h-[100dvh] w-full bg-slate-950 text-slate-100 flex flex-col justify-start lg:justify-center items-center overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:p-8 selection:bg-indigo-500 selection:text-white"
       style={{
-        paddingTop: 'max(1.5rem, calc(env(safe-area-inset-top, 0px) + 1.25rem))',
-        paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))',
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
       }}
@@ -355,9 +356,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'LOGIN' }) => 
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="relative z-10 w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+      <div className="relative z-10 w-full max-w-5xl my-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
         {/* Left Column: Brand & Product Highlights */}
-        <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
+        <div className="lg:col-span-6 space-y-4 lg:space-y-6 text-center lg:text-left">
           {/* Logo Pill */}
           <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-800/60 shadow-inner">
             <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center">
@@ -371,20 +372,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'LOGIN' }) => 
             </span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-            Master Music <br />
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+            Master Music <br className="hidden sm:inline" />
             <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 bg-clip-text text-transparent">
               One Note at a Time
             </span>
           </h1>
 
-          <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+          <p className="text-xs sm:text-sm lg:text-base text-slate-400 max-w-lg mx-auto lg:mx-0 leading-relaxed hidden sm:block">
             A gamified, multi-instrument music learning platform. Play the polyphonic virtual piano,
             train your ear, complete historical chapters, and record your studio practice.
           </p>
 
-          {/* Feature Highlights Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
+          {/* Feature Highlights Grid - Visible on Large Screens */}
+          <div className="hidden lg:grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
             <div className="flex items-start gap-3 p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80">
               <div className="p-2 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 shrink-0">
                 <Music size={18} />
@@ -429,7 +430,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'LOGIN' }) => 
 
         {/* Right Column: Interactive Sign In / Register Card */}
         <div className="lg:col-span-6 w-full max-w-md mx-auto">
-          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-indigo-950/40">
+          <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl shadow-indigo-950/40">
             {/* Mode Switcher Tabs */}
             <div className="grid grid-cols-2 p-1 bg-slate-950 rounded-2xl border border-slate-800 mb-6">
               <button

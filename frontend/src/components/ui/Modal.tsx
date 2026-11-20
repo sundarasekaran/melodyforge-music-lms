@@ -51,7 +51,13 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-start sm:justify-center items-center overflow-y-auto p-4 sm:p-6"
+      style={{
+        paddingTop: 'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))',
+      }}
+    >
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -60,7 +66,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Dialog Surface */}
       <div
-        className={`relative w-full ${maxWidthStyles[effectiveMaxWidth]} bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150`}
+        className={`relative w-full ${maxWidthStyles[effectiveMaxWidth]} my-auto bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[calc(100dvh-2rem)]`}
       >
         {/* Header */}
         {(title || description) && (

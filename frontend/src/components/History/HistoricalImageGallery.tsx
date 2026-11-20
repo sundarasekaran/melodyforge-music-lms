@@ -90,11 +90,11 @@ export const HistoricalImageGallery: React.FC<HistoricalImageGalleryProps> = ({
           size="xl"
         >
           <div className="space-y-4">
-            <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[60vh]">
+            <div className="rounded-2xl overflow-hidden bg-black flex items-center justify-center max-h-[50dvh] sm:max-h-[60dvh]">
               <img
                 src={activePreview.imageUrl}
                 alt={activePreview.caption}
-                className="w-full h-auto max-h-[60vh] object-contain"
+                className="w-full h-auto max-h-[50dvh] sm:max-h-[60dvh] object-contain"
               />
             </div>
             <p className="text-sm text-slate-300 text-center font-medium leading-relaxed px-4">

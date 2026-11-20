@@ -671,7 +671,7 @@ export const AdminPortal: React.FC = () => {
           title={editingChapterId ? 'Edit History Chapter' : 'Add History Chapter'}
           size="xl"
         >
-          <form onSubmit={handleSaveChapter} className="space-y-4 py-2 max-h-[75vh] overflow-y-auto pr-1">
+          <form onSubmit={handleSaveChapter} className="space-y-4 py-2 max-h-[60dvh] sm:max-h-[70dvh] overflow-y-auto pr-1">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
