@@ -33,10 +33,20 @@ interface AuthErrorDetails {
   type: 'CREDENTIALS' | 'NOT_FOUND' | 'NETWORK' | 'VALIDATION' | 'SERVER';
 }
 
-export const AuthPage: React.FC = () => {
+interface AuthPageProps {
+  initialMode?: 'LOGIN' | 'REGISTER';
+}
+
+export const AuthPage: React.FC<AuthPageProps> = ({ initialMode = 'LOGIN' }) => {
   const { login, register, savedUsername } = useAuth();
 
-  const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
+  const [mode, setMode] = useState<'LOGIN' | 'REGISTER'>(initialMode);
+
+  useEffect(() => {
+    if (initialMode) {
+      setMode(initialMode);
+    }
+  }, [initialMode]);
 
   // Login form state
   const [loginIdentifier, setLoginIdentifier] = useState(savedUsername || '');

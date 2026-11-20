@@ -15,6 +15,7 @@ import { BadgesGallery } from './components/Gamification/BadgesGallery';
 import { Leaderboard } from './components/Gamification/Leaderboard';
 import { MyProgressView } from './components/Progress/MyProgressView';
 import { AdminPortal } from './components/Admin/AdminPortal';
+import { SplashScreen } from './components/ui/SplashScreen';
 import { Button } from './components/ui/Button';
 import { Music, Sparkles } from 'lucide-react';
 
@@ -24,6 +25,24 @@ const MainApp: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState<string>('piano');
   const [activeLessonId, setActiveLessonId] = useState<number | null>(null);
   const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
+
+  // App opening logo & first-time install detection
+  const [showSplash, setShowSplash] = useState<boolean>(true);
+  const [isFirstTimeUser] = useState<boolean>(() => {
+    try {
+      const alreadyOpened = localStorage.getItem('melodyforge_app_has_opened');
+      return !alreadyOpened;
+    } catch {
+      return false;
+    }
+  });
+
+  const handleSplashFinish = () => {
+    setShowSplash(false);
+    try {
+      localStorage.setItem('melodyforge_app_has_opened', 'true');
+    } catch {}
+  };
 
   // Navigation sidebar collapse state
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -44,9 +63,15 @@ const MainApp: React.FC = () => {
     }
   };
 
+  // 1. Opening Logo Screen (always visible first on app start)
+  if (showSplash) {
+    return <SplashScreen onFinish={handleSplashFinish} minDuration={2200} />;
+  }
+
+  // 2. Loading State (if auth verification is pending after splash)
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-100 selection:bg-indigo-500 selection:text-white">
+      <div className="min-h-screen min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center text-slate-100 selection:bg-indigo-500 selection:text-white">
         <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center mb-4 animate-pulse">
           <Music size={28} />
         </div>
@@ -58,10 +83,14 @@ const MainApp: React.FC = () => {
     );
   }
 
-  // Dedicated full-screen authentication portal when unauthenticated
+  // 3. Unauthenticated State:
+  //    - 1st Time Opening App -> Default to Sign Up (REGISTER)
+  //    - Returning User -> Default to Sign In (LOGIN)
   if (!user) {
-    return <AuthPage />;
+    return <AuthPage initialMode={isFirstTimeUser ? 'REGISTER' : 'LOGIN'} />;
   }
+
+  // 4. Authenticated State: User is already signed in -> Open already signed account directly!
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans selection:bg-indigo-500 selection:text-white">
