@@ -118,6 +118,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`fixed top-0 bottom-0 left-0 z-40 bg-slate-950 border-r border-slate-800/80 flex flex-col justify-between transition-all duration-300 ease-in-out ${
           isCollapsed ? 'w-20' : 'w-64'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+        }}
       >
         {/* Top Logo & App Title */}
         <div>
@@ -150,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Navigation Links */}
-          <div className="p-3 overflow-y-auto max-h-[calc(100vh-140px)]">
+          <div className="p-3 overflow-y-auto max-h-[calc(100dvh-140px-env(safe-area-inset-top,0px)-env(safe-area-inset-bottom,0px))]">
             {renderNavGroup('Learn', mainNavItems)}
             {renderNavGroup('Practice', practicalItems)}
             {renderNavGroup('Mastery', achievementItems)}

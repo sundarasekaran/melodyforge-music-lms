@@ -235,7 +235,14 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
       </div>
 
       {/* Piano Keyboard Surface */}
-      <div className="relative select-none overflow-x-auto pb-4 max-w-full">
+      <div
+        className="relative select-none overflow-x-auto max-w-full"
+        style={{
+          paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))',
+          paddingLeft: 'max(0.5rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(0.5rem, env(safe-area-inset-right, 0px))',
+        }}
+      >
         <div className="piano-keybed relative inline-flex p-3 sm:p-4 rounded-3xl">
           {/* Render White Keys */}
           {whiteKeys.map((k) => {

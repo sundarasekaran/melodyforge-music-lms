@@ -97,7 +97,14 @@ const MainApp: React.FC = () => {
         />
 
         {/* Dynamic Page Content Viewport */}
-        <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main
+          className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+          style={{
+            paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom, 0px) + 2.5rem))',
+            paddingLeft: 'max(1rem, calc(env(safe-area-inset-left, 0px) + 0.5rem))',
+            paddingRight: 'max(1rem, calc(env(safe-area-inset-right, 0px) + 0.5rem))',
+          }}
+        >
           {/* TAB 1: Student Dashboard */}
           {activeTab === 'DASHBOARD' && (
             <StudentDashboard

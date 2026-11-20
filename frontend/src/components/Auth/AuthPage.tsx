@@ -322,8 +322,23 @@ export const AuthPage: React.FC = () => {
     }
   };
 
+  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    // Smoothly ensure input remains centered and visible above virtual keyboard
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white">
+    <div
+      className="min-h-screen min-h-[100dvh] bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 selection:bg-indigo-500 selection:text-white"
+      style={{
+        paddingTop: 'max(1.5rem, calc(env(safe-area-inset-top, 0px) + 1.25rem))',
+        paddingBottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.5rem))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+      }}
+    >
       {/* Background ambient lighting */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl animate-pulse" />
@@ -512,6 +527,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={loginIdentifier}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setLoginIdentifier(e.target.value);
                         if (authError?.field === 'identifier') setAuthError(null);
@@ -547,6 +563,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={loginPassword}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setLoginPassword(e.target.value);
                         if (authError?.field === 'password') setAuthError(null);
@@ -620,6 +637,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={regName}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setRegName(e.target.value);
                         if (authError?.field === 'general') setAuthError(null);
@@ -639,6 +657,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="text"
                       value={regUsername}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
                         if (authError?.field === 'username') setAuthError(null);
@@ -666,6 +685,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="email"
                       value={regEmail}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setRegEmail(e.target.value);
                         if (authError?.field === 'email') setAuthError(null);
@@ -695,6 +715,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="password"
                       value={regPassword}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setRegPassword(e.target.value);
                         if (authError?.field === 'password') setAuthError(null);
@@ -722,6 +743,7 @@ export const AuthPage: React.FC = () => {
                     <input
                       type="password"
                       value={regConfirmPassword}
+                      onFocus={handleInputFocus}
                       onChange={(e) => {
                         setRegConfirmPassword(e.target.value);
                         if (authError?.field === 'confirmPassword') setAuthError(null);

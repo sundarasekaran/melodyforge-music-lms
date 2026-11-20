@@ -55,7 +55,13 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between px-4 sm:px-6">
+    <header
+      className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between px-4 sm:px-6 transition-all"
+      style={{
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        minHeight: 'calc(4rem + env(safe-area-inset-top, 0px))',
+      }}
+    >
       {/* Left: Mobile hamburger & Page Title / Breadcrumb */}
       <div className="flex items-center gap-3">
         <button
