@@ -93,7 +93,7 @@ const MainApp: React.FC = () => {
   // 4. Authenticated State: User is already signed in -> Open already signed account directly!
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen w-full max-w-full bg-slate-950 text-slate-100 flex font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
       {/* Collapsible Left Navigation Sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -106,7 +106,7 @@ const MainApp: React.FC = () => {
 
       {/* Main Right Application Area */}
       <div
-        className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${
+        className={`flex-1 flex flex-col min-h-screen w-full min-w-0 max-w-full transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
         }`}
       >
@@ -127,11 +127,11 @@ const MainApp: React.FC = () => {
 
         {/* Dynamic Page Content Viewport */}
         <main
-          className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8"
+          className="flex-1 w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 min-w-0"
           style={{
             paddingBottom: 'max(3rem, calc(env(safe-area-inset-bottom, 0px) + 2.5rem))',
-            paddingLeft: 'max(1rem, calc(env(safe-area-inset-left, 0px) + 0.5rem))',
-            paddingRight: 'max(1rem, calc(env(safe-area-inset-right, 0px) + 0.5rem))',
+            paddingLeft: 'max(0.75rem, calc(env(safe-area-inset-left, 0px) + 0.5rem))',
+            paddingRight: 'max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.5rem))',
           }}
         >
           {/* TAB 1: Student Dashboard */}
@@ -256,14 +256,14 @@ const MainApp: React.FC = () => {
             </main>
 
         {/* Global Application Footer */}
-        <footer className="border-t border-slate-800/80 bg-slate-950 py-6 px-4 sm:px-6 lg:px-8 mt-auto text-xs text-slate-500">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+        <footer className="border-t border-slate-800/80 bg-slate-950 py-4 sm:py-6 px-3 sm:px-6 lg:px-8 mt-auto text-xs text-slate-500 w-full min-w-0">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-4 text-center sm:text-left">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
               <span className="font-bold text-slate-400">MelodyForge LMS</span>
               <span>•</span>
               <span>Multi-Instrument Educational Framework</span>
             </div>
-            <div className="flex items-center gap-4 text-[11px] text-slate-400">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 text-[11px] text-slate-400">
               <span>Flagship: Piano / Keyboard</span>
               <span>•</span>
               <span>4 Progressive Tiers</span>

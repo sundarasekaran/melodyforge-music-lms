@@ -56,45 +56,46 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between px-4 sm:px-6 transition-all"
+      className="sticky top-0 z-30 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between px-2.5 sm:px-6 w-full max-w-full overflow-hidden transition-all"
       style={{
         paddingTop: 'env(safe-area-inset-top, 0px)',
-        minHeight: 'calc(4rem + env(safe-area-inset-top, 0px))',
+        minHeight: 'calc(3.5rem + env(safe-area-inset-top, 0px))',
       }}
     >
       {/* Left: Mobile hamburger & Page Title / Breadcrumb */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1 mr-1.5 sm:mr-3">
         <button
           onClick={onMobileMenuToggle}
-          className="lg:hidden p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
+          className="lg:hidden p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-900 transition-colors shrink-0 cursor-pointer"
           title="Open Menu"
         >
-          <Menu size={20} />
+          <Menu size={18} className="sm:w-5 sm:h-5" />
         </button>
 
-        <div>
-          <h2 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+        <div className="min-w-0 flex items-center gap-1.5 sm:gap-2 truncate">
+          <h2 className="text-xs sm:text-sm md:text-base font-bold text-white tracking-tight truncate">
             {getPageTitle(activeTab)}
-            {breadcrumb && (
-              <span className="text-xs text-indigo-400 font-semibold bg-indigo-950/60 px-2 py-0.5 rounded border border-indigo-800/50">
-                {breadcrumb}
-              </span>
-            )}
           </h2>
+          {breadcrumb && (
+            <span className="text-[10px] sm:text-xs text-indigo-400 font-semibold bg-indigo-950/80 px-1.5 sm:px-2 py-0.5 rounded border border-indigo-800/60 shrink-0">
+              {breadcrumb}
+            </span>
+          )}
         </div>
       </div>
 
       {/* Right: Instrument Selector, Gamification Stats & Profile */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
         {/* Instrument Selector Pill */}
         <div className="relative">
           <button
             onClick={() => setShowInstMenu(!showInstMenu)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
+            title="Select Instrument"
           >
             <span>{currentInst.icon}</span>
             <span className="hidden md:inline">{currentInst.name}</span>
-            <ChevronDown size={14} className="text-slate-400" />
+            <ChevronDown size={12} className="text-slate-400" />
           </button>
 
           {showInstMenu && (
@@ -130,32 +131,33 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Daily Practice Streak Flame */}
         <div
-          className="flex items-center gap-1.5 text-xs font-bold text-orange-400 bg-orange-500/10 px-3 py-1.5 rounded-xl border border-orange-500/20 shadow-sm"
+          className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-orange-400 bg-orange-500/10 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-orange-500/20 shadow-sm shrink-0"
           title="Daily Practice Streak"
         >
-          <Flame size={15} />
+          <Flame size={13} className="shrink-0" />
           <span>{user?.currentStreakDays || 0}d</span>
         </div>
 
         {/* XP & Level Badge */}
         <div
-          className="flex items-center gap-1.5 text-xs font-bold text-amber-400 bg-amber-400/10 px-3 py-1.5 rounded-xl border border-amber-400/20 shadow-sm"
+          className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-amber-400 bg-amber-400/10 px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border border-amber-400/20 shadow-sm shrink-0"
           title="Total Experience Points"
         >
-          <Zap size={14} />
+          <Zap size={12} className="shrink-0" />
           <span>{user?.totalXp || 0} XP</span>
         </div>
 
         {/* Profile Dropdown */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+            className="flex items-center gap-1 p-1 sm:p-1.5 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+            title="Profile Menu"
           >
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">
-              {user?.displayName ? user.displayName.charAt(0) : 'U'}
+            <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-[11px] sm:text-xs font-bold shrink-0">
+              {user?.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
             </div>
-            <ChevronDown size={14} className="text-slate-400 hidden sm:inline" />
+            <ChevronDown size={12} className="text-slate-400 hidden sm:inline" />
           </button>
 
           {showUserMenu && (

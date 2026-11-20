@@ -17,19 +17,19 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   icon,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-800/80 mb-6">
-      <div>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-4 sm:pb-6 border-b border-slate-800/80 mb-5 sm:mb-6 w-full min-w-0 max-w-full">
+      <div className="min-w-0 flex-1">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav className="flex items-center gap-1.5 text-xs text-slate-400 mb-2 font-medium">
+          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-slate-400 mb-2 font-medium">
             {breadcrumbs.map((crumb, idx) => (
               <React.Fragment key={idx}>
-                {idx > 0 && <ChevronRight size={12} className="text-slate-600" />}
+                {idx > 0 && <ChevronRight size={12} className="text-slate-600 shrink-0" />}
                 {crumb.onClick ? (
-                  <button onClick={crumb.onClick} className="hover:text-slate-200 cursor-pointer">
+                  <button onClick={crumb.onClick} className="hover:text-slate-200 cursor-pointer truncate max-w-[160px] sm:max-w-none">
                     {crumb.label}
                   </button>
                 ) : (
-                  <span className={idx === breadcrumbs.length - 1 ? 'text-indigo-400 font-semibold' : ''}>
+                  <span className={`truncate max-w-[180px] sm:max-w-none ${idx === breadcrumbs.length - 1 ? 'text-indigo-400 font-semibold' : ''}`}>
                     {crumb.label}
                   </span>
                 )}
@@ -38,20 +38,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </nav>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-start sm:items-center gap-3 min-w-0">
           {icon && (
-            <div className="w-10 h-10 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
               {icon}
             </div>
           )}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{title}</h1>
-            {subtitle && <p className="text-xs sm:text-sm text-slate-400 mt-1">{subtitle}</p>}
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white tracking-tight break-words">{title}</h1>
+            {subtitle && <p className="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed break-words">{subtitle}</p>}
           </div>
         </div>
       </div>
 
-      {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">{actions}</div>}
     </div>
   );
 };

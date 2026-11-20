@@ -8,6 +8,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Modal } from '../ui/Modal';
+import { MarkdownContent } from '../ui/MarkdownContent';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -195,18 +196,18 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const exerciseProgress = exercises.length > 0 ? (Object.keys(evaluationResults).length / exercises.length) * 100 : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-200">
+    <div className="w-full max-w-full min-w-0 space-y-4 sm:space-y-6 animate-in fade-in duration-200">
       {/* Top Breadcrumb & Actions Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800/80">
+      <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-4 pb-3 sm:pb-4 border-b border-slate-800/80 w-full min-w-0">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer truncate max-w-[200px] sm:max-w-none"
         >
-          <ArrowLeft size={16} />
-          <span>Back to Learning Roadmap</span>
+          <ArrowLeft size={16} className="shrink-0" />
+          <span className="truncate">Back to Learning Roadmap</span>
         </button>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           <Badge variant="indigo" size="sm">
             {lesson.lessonType}
           </Badge>
@@ -222,93 +223,84 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
       </div>
 
       {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full min-w-0 max-w-full">
         {/* Left Column: Lesson Educational Content & Interactive Exercises */}
-        <div className="lg:col-span-8 space-y-6">
+        <div className="lg:col-span-8 space-y-4 sm:space-y-6 w-full min-w-0 max-w-full">
           {/* Theory & Instruction Card */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-            <div className="pb-5 border-b border-slate-800 mb-6">
-              <span className="text-xs uppercase font-bold tracking-wider text-indigo-400">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl w-full min-w-0 max-w-full break-words overflow-hidden">
+            <div className="pb-4 sm:pb-5 border-b border-slate-800 mb-5 sm:mb-6 w-full min-w-0">
+              <span className="text-[11px] sm:text-xs uppercase font-bold tracking-wider text-indigo-400 block truncate">
                 Tier 1: Basics • Step {lesson.orderIndex}
               </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white mt-1 tracking-tight">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white mt-1 tracking-tight break-words">
                 {lesson.title}
               </h1>
-              <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed">
+              <p className="text-xs sm:text-sm text-slate-400 mt-2 leading-relaxed break-words">
                 {lesson.description}
               </p>
             </div>
 
             {/* Learning Objectives Box */}
-            <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 mb-6">
+            <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 mb-5 sm:mb-6 w-full min-w-0">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-3">
-                <ListChecks size={16} className="text-indigo-400" />
-                Lesson Learning Objectives
+                <ListChecks size={16} className="text-indigo-400 shrink-0" />
+                <span>Lesson Learning Objectives</span>
               </h3>
-              <ul className="space-y-2 text-xs text-slate-300">
+              <ul className="space-y-2 text-xs sm:text-sm text-slate-300">
                 {objectives.map((obj, i) => (
                   <li key={i} className="flex items-start gap-2.5">
                     <span className="w-4 h-4 rounded-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                       ✓
                     </span>
-                    <span>{obj}</span>
+                    <span className="break-words leading-snug">{obj}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {/* Core Theory Prose */}
-            <div className="prose prose-invert max-w-none text-slate-200 text-sm sm:text-base leading-relaxed space-y-4 mb-8">
-              {lesson.theoryContent.split('\n\n').map((paragraph, idx) => {
-                if (paragraph.startsWith('### ')) {
-                  return (
-                    <h3 key={idx} className="text-lg sm:text-xl font-bold text-indigo-300 mt-6 mb-2">
-                      {paragraph.replace('### ', '')}
-                    </h3>
-                  );
-                }
-                return <p key={idx}>{paragraph}</p>;
-              })}
-            </div>
+            {/* Core Theory Prose with Full Markdown Support */}
+            <MarkdownContent content={lesson.theoryContent} className="mb-6 sm:mb-8" />
 
             {/* Embedded Keyboard for Practical and Listening Lessons */}
             {(lesson.lessonType === 'PRACTICAL' || lesson.lessonType === 'LISTENING' || lesson.lessonType === 'ASSESSMENT') && (
-              <div className="my-8 pt-6 border-t border-slate-800">
-                <div className="flex items-center justify-between mb-4">
+              <div className="my-6 sm:my-8 pt-5 sm:pt-6 border-t border-slate-800 w-full min-w-0 max-w-full overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 mb-4">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Sparkles size={16} className="text-amber-400" />
-                    Interactive Keyboard Workspace
+                    <Sparkles size={16} className="text-amber-400 shrink-0" />
+                    <span>Interactive Keyboard Workspace</span>
                   </h3>
                   <span className="text-[11px] text-slate-400">Play keys to test live audio & staff response</span>
                 </div>
-                <VirtualPiano
-                  highlightedNote={questionMeta.targetNote || (lesson.title.includes('C4') ? 'C4' : null)}
-                  onNotePlayed={handleVirtualPianoNote}
-                />
+                <div className="w-full max-w-full overflow-x-auto">
+                  <VirtualPiano
+                    highlightedNote={questionMeta.targetNote || (lesson.title.includes('C4') ? 'C4' : null)}
+                    onNotePlayed={handleVirtualPianoNote}
+                  />
+                </div>
               </div>
             )}
 
             {/* Interactive Exercises Stepper */}
             {exercises.length > 0 && (
-              <div className="pt-6 border-t border-slate-800">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <HelpCircle size={18} className="text-amber-400" />
-                      Knowledge Check Exercises ({exercises.length})
+              <div className="pt-5 sm:pt-6 border-t border-slate-800 w-full min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 truncate">
+                      <HelpCircle size={18} className="text-amber-400 shrink-0" />
+                      <span className="truncate">Knowledge Check ({exercises.length})</span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      Answer the prompts to verify your understanding and earn exercise XP
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5 truncate">
+                      Verify your understanding to earn XP
                     </p>
                   </div>
-                  <Badge variant="indigo" size="sm">
+                  <Badge variant="indigo" size="sm" className="shrink-0">
                     {currentExerciseIndex + 1} of {exercises.length}
                   </Badge>
                 </div>
 
                 {currentExercise && (
-                  <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-5 mb-4">
-                    <p className="text-sm font-bold text-slate-100 mb-4">
+                  <div className="bg-slate-950/80 border border-slate-800 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 mb-4 w-full min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-slate-100 mb-4 break-words">
                       {currentExercise.prompt}
                     </p>
 
@@ -316,16 +308,16 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                     {questionMeta.audioNote && (
                       <button
                         onClick={playExerciseAudio}
-                        className="flex items-center gap-2 px-3.5 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-xl text-xs font-bold border border-indigo-500/30 mb-4 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 rounded-xl text-xs font-bold border border-indigo-500/30 mb-4 transition-colors cursor-pointer"
                       >
-                        <Volume2 size={16} />
+                        <Volume2 size={16} className="shrink-0" />
                         <span>Play Reference Audio Tone</span>
                       </button>
                     )}
 
                     {/* Multiple Choice Options */}
                     {questionMeta.options && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-2.5 w-full min-w-0">
                         {questionMeta.options.map((opt: string) => {
                           const isSelected = userAnswers[currentExercise.id] === opt;
                           const evalRes = evaluationResults[currentExercise.id];
@@ -344,9 +336,9 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                               key={opt}
                               onClick={() => submitExerciseAnswer(currentExercise.id, opt)}
                               disabled={!!evalRes}
-                              className={`p-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all text-left flex items-center justify-between cursor-pointer ${btnStyle}`}
+                              className={`p-3 sm:p-3.5 rounded-xl border text-xs sm:text-sm font-semibold transition-all text-left flex items-center justify-between gap-2 cursor-pointer break-words ${btnStyle}`}
                             >
-                              <span>{opt}</span>
+                              <span className="break-words">{opt}</span>
                               {evalRes && opt === currentExercise.expectedAnswer && (
                                 <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
                               )}
@@ -358,16 +350,16 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 
                     {/* Keyboard play cue */}
                     {currentExercise.exerciseType === 'KEYBOARD_PLAY' && (
-                      <div className="text-xs text-amber-300 bg-amber-400/10 p-3.5 rounded-xl border border-amber-400/20 flex items-center gap-2">
+                      <div className="text-xs text-amber-300 bg-amber-400/10 p-3 sm:p-3.5 rounded-xl border border-amber-400/20 flex items-center gap-2">
                         <Sparkles size={16} className="text-amber-400 shrink-0" />
-                        <span>Play the required note on the virtual keyboard above to submit!</span>
+                        <span className="break-words">Play the required note on the virtual keyboard above to submit!</span>
                       </div>
                     )}
 
                     {/* Evaluation Feedback */}
                     {evaluationResults[currentExercise.id] && (
                       <div
-                        className={`mt-4 p-3.5 rounded-xl text-xs ${
+                        className={`mt-4 p-3 sm:p-3.5 rounded-xl text-xs ${
                           evaluationResults[currentExercise.id].correct
                             ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-600/40'
                             : 'bg-rose-950/60 text-rose-300 border border-rose-600/40'
@@ -376,7 +368,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                         <p className="font-bold">
                           {evaluationResults[currentExercise.id].correct ? '✓ Correct Answer!' : '✗ Not quite.'}
                         </p>
-                        <p className="mt-1 opacity-90">{evaluationResults[currentExercise.id].explanation}</p>
+                        <p className="mt-1 opacity-90 break-words">{evaluationResults[currentExercise.id].explanation}</p>
                       </div>
                     )}
                   </div>
@@ -384,7 +376,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 
                 {/* Stepper Navigation */}
                 {exercises.length > 1 && (
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex items-center justify-between pt-2 w-full min-w-0">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -402,7 +394,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                       icon={<ChevronRight size={16} />}
                       iconPosition="right"
                     >
-                      Next Exercise
+                      Next
                     </Button>
                   </div>
                 )}
@@ -412,14 +404,14 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
         </div>
 
         {/* Right Column: Sticky Lesson Sidebar & Navigation Outline */}
-        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20">
+        <div className="lg:col-span-4 space-y-4 sm:space-y-6 lg:sticky lg:top-20 w-full min-w-0 max-w-full">
           {/* Action Card: Complete Lesson */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-4 w-full min-w-0">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
                 Lesson Status
               </span>
-              <h4 className="text-base font-bold text-white mt-0.5">
+              <h4 className="text-base font-bold text-white mt-0.5 truncate">
                 {completed ? 'Lesson Completed' : 'In Progress'}
               </h4>
             </div>
@@ -434,7 +426,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             <Button
               variant={completed ? 'secondary' : 'amber'}
               size="lg"
-              className="w-full font-bold"
+              className="w-full font-bold justify-center"
               disabled={isSubmitting || completed}
               loading={isSubmitting}
               icon={<CheckCircle2 size={18} />}
@@ -445,7 +437,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           </div>
 
           {/* Lesson Metadata Card */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-3 text-xs">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-xl space-y-3 text-xs w-full min-w-0">
             <h4 className="text-xs uppercase font-bold tracking-wider text-slate-400 pb-2 border-b border-slate-800">
               Module Details
             </h4>
