@@ -17,7 +17,7 @@ import { MyProgressView } from './components/Progress/MyProgressView';
 import { AdminPortal } from './components/Admin/AdminPortal';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { Button } from './components/ui/Button';
-import { Music, Sparkles } from 'lucide-react';
+import { Music } from 'lucide-react';
 
 const MainApp: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -190,17 +190,17 @@ const MainApp: React.FC = () => {
                 )
               )}
 
-              {/* TAB 5: Standalone Concert Grand Virtual Piano */}
+              {/* TAB 5: Standalone Concert Grand Virtual Piano Studio */}
               {activeTab === 'PIANO' && (
-                <div className="space-y-4">
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex items-center justify-between">
+                <div className="space-y-6">
+                  <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                        <Music className="text-indigo-400" size={22} />
-                        Concert Grand Virtual Piano
+                      <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2.5">
+                        <Music className="text-indigo-400" size={24} />
+                        Concert Grand Virtual Piano Studio
                       </h2>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Polyphonic acoustic piano synthesis, interactive treble clef notation, and computer keyboard controls
+                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
+                        Dual-mode responsive keyboard, 5-harmonic multi-voice synthesis, interactive staff notation, and 5 learning modes
                       </p>
                     </div>
                   </div>

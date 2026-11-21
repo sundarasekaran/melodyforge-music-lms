@@ -11,6 +11,7 @@
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "lint": "oxlint",
+    "test": "node --experimental-strip-types --test src/tests/pianoAudioEngine.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,9 +20,11 @@
     "@capacitor/core": "^8.6.2",
     "@capacitor/ios": "^8.6.2",
     "@tailwindcss/vite": "^4.3.5",
+    "clsx": "^2.1.1",
     "lucide-react": "^1.73.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "tailwind-merge": "^3.7.1",
     "tailwindcss": "^4.3.5",
     "tone": "^15.1.22"
   },

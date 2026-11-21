@@ -179,3 +179,6 @@ export interface LeaderboardEntry {
   currentLevel: number;
   currentStreakDays: number;
 }
+
+export * from './piano.ts';
+
