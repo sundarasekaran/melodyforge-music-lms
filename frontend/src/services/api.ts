@@ -239,6 +239,13 @@ class ApiService {
       method: 'DELETE',
     });
   }
+
+  public async saveAdminLesson(lesson: Partial<Lesson>): Promise<Lesson> {
+    return this.request<Lesson>('/admin/lessons', {
+      method: 'POST',
+      body: JSON.stringify(lesson),
+    });
+  }
 }
 
 export const api = new ApiService();

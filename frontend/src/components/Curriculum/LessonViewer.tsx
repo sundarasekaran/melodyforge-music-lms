@@ -9,6 +9,13 @@ import { Badge } from '../ui/Badge';
 import { ProgressBar } from '../ui/ProgressBar';
 import { Modal } from '../ui/Modal';
 import { MarkdownContent } from '../ui/MarkdownContent';
+import { cn } from '../../utils/cn';
+import {
+  SoundActionDiagram,
+  PostureAndHandLab,
+  KeyboardExplorerGame,
+  NotationTheoryLab,
+} from '../Labs';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -22,6 +29,9 @@ import {
   Clock,
   ListChecks,
   Compass,
+  Hammer,
+  Layers,
+  Target,
 } from 'lucide-react';
 
 interface LessonViewerProps {
@@ -50,6 +60,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [workspaceMode, setWorkspaceMode] = useState<'LAB' | 'PIANO'>('LAB');
 
   useEffect(() => {
     const fetchLesson = async () => {
@@ -261,24 +272,127 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
             {/* Core Theory Prose with Full Markdown Support */}
             <MarkdownContent content={lesson.theoryContent} className="mb-6 sm:mb-8" />
 
-            {/* Embedded Keyboard for Practical and Listening Lessons */}
-            {(lesson.lessonType === 'PRACTICAL' || lesson.lessonType === 'LISTENING' || lesson.lessonType === 'ASSESSMENT') && (
-              <div className="my-6 sm:my-8 pt-5 sm:pt-6 border-t border-slate-800 w-full min-w-0 max-w-full overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 mb-4">
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Sparkles size={16} className="text-amber-400 shrink-0" />
-                    <span>Interactive Keyboard Workspace</span>
-                  </h3>
-                  <span className="text-[11px] text-slate-400">Play keys to test live audio & staff response</span>
+            {/* Integrated Pedagogical Lab & Interactive Keyboard Workspace */}
+            {(() => {
+              const titleLower = lesson.title.toLowerCase();
+              const isPostureLesson = titleLower.includes('posture') || titleLower.includes('finger');
+              const isKeyboardExplorerLesson =
+                titleLower.includes('pattern') ||
+                titleLower.includes('white keys') ||
+                titleLower.includes('middle c') ||
+                titleLower.includes('geography');
+              const isNotationLesson =
+                titleLower.includes('alphabet') ||
+                titleLower.includes('notation') ||
+                titleLower.includes('staff');
+              const isPhysicsLesson =
+                titleLower.includes('anatomy') ||
+                titleLower.includes('action') ||
+                titleLower.includes('sound');
+
+              const hasPedagogicalLab =
+                isPostureLesson || isKeyboardExplorerLesson || isNotationLesson || isPhysicsLesson;
+
+              const shouldShowWorkspace =
+                hasPedagogicalLab ||
+                lesson.lessonType === 'PRACTICAL' ||
+                lesson.lessonType === 'LISTENING' ||
+                lesson.lessonType === 'ASSESSMENT';
+
+              if (!shouldShowWorkspace) return null;
+
+              return (
+                <div className="my-6 sm:my-8 pt-5 sm:pt-6 border-t border-slate-800 w-full min-w-0 max-w-full overflow-hidden space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <Sparkles size={16} className="text-amber-400 shrink-0" />
+                        <span>Interactive Educational Lab &amp; Workspace</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Hands-on laboratory activities integrated into this lesson
+                      </p>
+                    </div>
+
+                    {hasPedagogicalLab && (
+                      <div className="flex rounded-xl border border-slate-800 bg-slate-950 p-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setWorkspaceMode('LAB')}
+                          className={cn(
+                            'rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                            workspaceMode === 'LAB'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-slate-400 hover:text-white'
+                          )}
+                        >
+                          <Compass size={13} />
+                          Pedagogical Lab
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setWorkspaceMode('PIANO')}
+                          className={cn(
+                            'rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5',
+                            workspaceMode === 'PIANO'
+                              ? 'bg-indigo-600 text-white shadow-sm'
+                              : 'text-slate-400 hover:text-white'
+                          )}
+                        >
+                          <BookOpen size={13} />
+                          Free Keyboard
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Render Dedicated Pedagogical Lab or Virtual Piano Workspace */}
+                  {hasPedagogicalLab && workspaceMode === 'LAB' ? (
+                    <div className="w-full max-w-full overflow-hidden animate-in fade-in duration-200">
+                      {isPostureLesson && (
+                        <PostureAndHandLab
+                          onLabComplete={() => {
+                            awardLocalXp(50);
+                            setCompleted(true);
+                          }}
+                        />
+                      )}
+                      {isKeyboardExplorerLesson && (
+                        <KeyboardExplorerGame
+                          onGameComplete={(score) => {
+                            awardLocalXp(50);
+                          }}
+                        />
+                      )}
+                      {isNotationLesson && (
+                        <NotationTheoryLab
+                          onLabComplete={() => {
+                            awardLocalXp(50);
+                            setCompleted(true);
+                          }}
+                        />
+                      )}
+                      {isPhysicsLesson && (
+                        <SoundActionDiagram
+                          compactMode
+                          onLabComplete={() => {
+                            awardLocalXp(50);
+                            setCompleted(true);
+                          }}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full max-w-full overflow-x-auto">
+                      <VirtualPiano
+                        highlightedNote={questionMeta.targetNote || (lesson.title.includes('C4') ? 'C4' : null)}
+                        onNotePlayed={handleVirtualPianoNote}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="w-full max-w-full overflow-x-auto">
-                  <VirtualPiano
-                    highlightedNote={questionMeta.targetNote || (lesson.title.includes('C4') ? 'C4' : null)}
-                    onNotePlayed={handleVirtualPianoNote}
-                  />
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Interactive Exercises Stepper */}
             {exercises.length > 0 && (

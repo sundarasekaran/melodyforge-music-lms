@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Instrument, User, HistoryChapter } from '../../types';
+import { Instrument, User, HistoryChapter, Lesson, LearningTier } from '../../types';
 import { PageHeader } from '../ui/PageHeader';
 import { StatCard } from '../ui/StatCard';
 import { Button } from '../ui/Button';
@@ -73,6 +73,22 @@ export const AdminPortal: React.FC = () => {
   const [chDurationMinutes, setChDurationMinutes] = useState(10);
   const [chIsPublished, setChIsPublished] = useState(true);
 
+  // Lesson curriculum admin state
+  const [selectedCurriculumSlug, setSelectedCurriculumSlug] = useState<string>('piano');
+  const [curriculumTiers, setCurriculumTiers] = useState<LearningTier[]>([]);
+  const [loadingCurriculum, setLoadingCurriculum] = useState(false);
+  const [showLessonModal, setShowLessonModal] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+
+  // Lesson form state
+  const [lesTitle, setLesTitle] = useState('');
+  const [lesDescription, setLesDescription] = useState('');
+  const [lesTheoryContent, setLesTheoryContent] = useState('');
+  const [lesType, setLesType] = useState<'THEORY' | 'PRACTICAL' | 'LISTENING' | 'ASSESSMENT'>('THEORY');
+  const [lesDuration, setLesDuration] = useState(10);
+  const [lesXpReward, setLesXpReward] = useState(50);
+  const [lesIsPublished, setLesIsPublished] = useState(true);
+
   const fetchAdminData = async () => {
     try {
       const [statsData, instData] = await Promise.all([
@@ -123,6 +139,18 @@ export const AdminPortal: React.FC = () => {
     }
   };
 
+  const fetchCurriculumTiers = async (slug: string) => {
+    setLoadingCurriculum(true);
+    try {
+      const data = await api.getInstrumentTiers(slug);
+      setCurriculumTiers(data);
+    } catch (e) {
+      console.error('Failed to load curriculum tiers', e);
+    } finally {
+      setLoadingCurriculum(false);
+    }
+  };
+
   useEffect(() => {
     fetchAdminData();
   }, []);
@@ -130,8 +158,46 @@ export const AdminPortal: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'HISTORY') {
       fetchHistoryChapters(selectedHistorySlug);
+    } else if (activeTab === 'CURRICULUM') {
+      fetchCurriculumTiers(selectedCurriculumSlug);
     }
-  }, [activeTab, selectedHistorySlug]);
+  }, [activeTab, selectedHistorySlug, selectedCurriculumSlug]);
+
+  const handleOpenEditLesson = (lesson: Lesson) => {
+    setEditingLesson(lesson);
+    setLesTitle(lesson.title);
+    setLesDescription(lesson.description || '');
+    setLesTheoryContent(lesson.theoryContent || '');
+    setLesType(lesson.lessonType || 'THEORY');
+    setLesDuration(lesson.durationMinutes || 10);
+    setLesXpReward(lesson.xpReward || 50);
+    setLesIsPublished(lesson.isPublished ?? true);
+    setShowLessonModal(true);
+  };
+
+  const handleSaveLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLesson) return;
+
+    const payload: Partial<Lesson> = {
+      id: editingLesson.id,
+      title: lesTitle,
+      description: lesDescription,
+      theoryContent: lesTheoryContent,
+      lessonType: lesType,
+      durationMinutes: lesDuration,
+      xpReward: lesXpReward,
+      isPublished: lesIsPublished,
+    };
+
+    try {
+      await api.saveAdminLesson(payload);
+      setShowLessonModal(false);
+      fetchCurriculumTiers(selectedCurriculumSlug);
+    } catch (err) {
+      console.error('Error saving lesson', err);
+    }
+  };
 
   const handleAddInstrument = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -660,6 +726,125 @@ export const AdminPortal: React.FC = () => {
               <Badge variant="gold" size="sm" className="mt-3">Configured</Badge>
             </div>
           </div>
+
+          {/* Interactive Lesson & Lab Curriculum Manager */}
+          <div className="pt-6 border-t border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Edit3 size={16} className="text-indigo-400" />
+                  Curriculum Lessons &amp; Attached Educational Labs
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Inspect and edit lesson theory content, durations, XP awards, and attached pedagogical laboratories.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400 font-bold">Instrument:</span>
+                <select
+                  value={selectedCurriculumSlug}
+                  onChange={(e) => {
+                    setSelectedCurriculumSlug(e.target.value);
+                    fetchCurriculumTiers(e.target.value);
+                  }}
+                  className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-bold cursor-pointer"
+                >
+                  {instruments.map((inst) => (
+                    <option key={inst.id} value={inst.slug}>
+                      {inst.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {loadingCurriculum ? (
+              <div className="flex items-center justify-center p-8 text-slate-400">
+                <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mr-2" />
+                <span className="text-xs">Loading curriculum tree...</span>
+              </div>
+            ) : curriculumTiers.length === 0 ? (
+              <div className="p-6 text-center text-slate-500 text-xs">
+                No tiers or lessons found for {selectedCurriculumSlug}.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {curriculumTiers.map((tier) => (
+                  <div key={tier.id} className="bg-slate-950 rounded-2xl p-4 sm:p-5 border border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-extrabold text-indigo-400 uppercase tracking-wider">
+                        Tier {tier.tierOrder}: {tier.tierName}
+                      </span>
+                      <Badge variant="indigo" size="sm">
+                        {tier.levels.reduce((acc, l) => acc + l.courses.reduce((cAcc, c) => cAcc + c.lessons.length, 0), 0)} Lessons
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      {tier.levels.map((level) => (
+                        <div key={level.id} className="space-y-2 pt-1">
+                          <h5 className="text-xs font-bold text-slate-300 px-1">
+                            {level.title}
+                          </h5>
+
+                          <div className="space-y-1.5">
+                            {level.courses.flatMap((c) => c.lessons).map((lesson) => {
+                              const tLower = lesson.title.toLowerCase();
+                              let attachedLab = 'Virtual Piano';
+                              if (tLower.includes('anatomy') || tLower.includes('sound')) attachedLab = '🔬 Sound Action Physics Lab';
+                              else if (tLower.includes('pattern') || tLower.includes('white keys') || tLower.includes('middle c')) attachedLab = '🧭 Keyboard Explorer Game';
+                              else if (tLower.includes('alphabet') || tLower.includes('notation')) attachedLab = '🎼 Notation Theory Lab';
+                              else if (tLower.includes('posture') || tLower.includes('finger')) attachedLab = '🪑 Posture & Hand Lab';
+
+                              return (
+                                <div
+                                  key={lesson.id}
+                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition-colors"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-xs sm:text-sm font-bold text-white truncate">
+                                        {lesson.title}
+                                      </p>
+                                      <Badge variant="slate" size="sm">
+                                        {lesson.lessonType}
+                                      </Badge>
+                                      <Badge variant="gold" size="sm">
+                                        +{lesson.xpReward} XP
+                                      </Badge>
+                                    </div>
+                                    <p className="text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                                      {lesson.description}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 shrink-0">
+                                    <span className="text-[11px] font-mono text-indigo-300 bg-indigo-950/40 border border-indigo-500/20 px-2 py-0.5 rounded-lg">
+                                      {attachedLab}
+                                    </span>
+
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      leftIcon={<Edit3 size={13} />}
+                                      onClick={() => handleOpenEditLesson(lesson)}
+                                    >
+                                      Edit
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -962,6 +1147,124 @@ export const AdminPortal: React.FC = () => {
               </Button>
               <Button type="submit" variant="amber" size="sm">
                 Save & Register Instrument
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Edit Curriculum Lesson Modal */}
+      {showLessonModal && editingLesson && (
+        <Modal
+          isOpen={showLessonModal}
+          onClose={() => setShowLessonModal(false)}
+          title={`Edit Lesson: ${editingLesson.title}`}
+          size="lg"
+        >
+          <form onSubmit={handleSaveLesson} className="space-y-4 py-2 max-h-[70dvh] overflow-y-auto pr-1">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                Lesson Title
+              </label>
+              <input
+                type="text"
+                required
+                value={lesTitle}
+                onChange={(e) => setLesTitle(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  Lesson Type
+                </label>
+                <select
+                  value={lesType}
+                  onChange={(e) => setLesType(e.target.value as any)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white"
+                >
+                  <option value="THEORY">THEORY</option>
+                  <option value="PRACTICAL">PRACTICAL</option>
+                  <option value="LISTENING">LISTENING</option>
+                  <option value="ASSESSMENT">ASSESSMENT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  Duration (Minutes)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={lesDuration}
+                  onChange={(e) => setLesDuration(parseInt(e.target.value, 10))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                  XP Reward
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  step="5"
+                  required
+                  value={lesXpReward}
+                  onChange={(e) => setLesXpReward(parseInt(e.target.value, 10))}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-xs text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                Short Description
+              </label>
+              <textarea
+                rows={2}
+                value={lesDescription}
+                onChange={(e) => setLesDescription(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1">
+                Theory &amp; Instruction Content (Markdown)
+              </label>
+              <textarea
+                rows={8}
+                value={lesTheoryContent}
+                onChange={(e) => setLesTheoryContent(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs font-mono text-white leading-relaxed"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="isLessonPublishedCheck"
+                checked={lesIsPublished}
+                onChange={(e) => setLesIsPublished(e.target.checked)}
+                className="w-4 h-4 rounded text-indigo-500 bg-slate-950 border-slate-800 focus:ring-indigo-500"
+              />
+              <label htmlFor="isLessonPublishedCheck" className="text-xs font-bold text-slate-300">
+                Lesson is published and visible to learners
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setShowLessonModal(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" size="sm">
+                Save Lesson Changes
               </Button>
             </div>
           </form>

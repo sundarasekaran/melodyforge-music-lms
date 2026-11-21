@@ -12,6 +12,7 @@ import { HistoryTimeline } from './HistoryTimeline';
 import { HistoricalFactCard } from './HistoricalFactCard';
 import { HistoricalImageGallery } from './HistoricalImageGallery';
 import { HistoryKnowledgeCheck } from './HistoryKnowledgeCheck';
+import { SoundActionDiagram } from '../Labs/SoundActionDiagram';
 import {
   ArrowLeft,
   Volume2,
@@ -24,6 +25,7 @@ import {
   ChevronLeft,
   Quote,
   Lightbulb,
+  Hammer,
 } from 'lucide-react';
 
 interface InstrumentHistoryChapterProps {
@@ -50,6 +52,7 @@ export const InstrumentHistoryChapter: React.FC<InstrumentHistoryChapterProps> =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [showActionLab, setShowActionLab] = useState(false);
 
   const fetchHistory = async () => {
     try {
@@ -269,6 +272,40 @@ export const InstrumentHistoryChapter: React.FC<InstrumentHistoryChapterProps> =
             >
               Play Acoustic Tone
             </Button>
+          </div>
+        )}
+
+        {/* Integrated Sound Action Physics Lab (Acoustic Mechanics & Escapement) */}
+        {instrumentSlug === 'piano' && (
+          <div className="pt-2 border-t border-slate-800 space-y-4">
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/25 via-slate-950 to-indigo-950/25 border border-amber-500/25 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+              <div>
+                <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 block mb-0.5">
+                  Pedagogical Physics Lab • 60 FPS Mechanics
+                </span>
+                <h4 className="text-sm sm:text-base font-bold text-white">
+                  Sound Action &amp; Escapement Physics Studio
+                </h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-xl leading-relaxed">
+                  Interactive real-time cross-section demonstrating key levers, the Cristofori escapement, felt dampers, string harmonics, and Sitka spruce soundboard resonance.
+                </p>
+              </div>
+
+              <Button
+                variant={showActionLab ? 'primary' : 'amber'}
+                size="sm"
+                leftIcon={<Hammer size={15} />}
+                onClick={() => setShowActionLab(!showActionLab)}
+              >
+                {showActionLab ? 'Hide Action Physics Lab' : 'Launch Action Physics Lab'}
+              </Button>
+            </div>
+
+            {showActionLab && (
+              <div className="pt-2 animate-in fade-in duration-300">
+                <SoundActionDiagram />
+              </div>
+            )}
           </div>
         )}
 

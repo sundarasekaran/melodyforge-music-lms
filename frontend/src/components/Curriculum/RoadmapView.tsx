@@ -5,6 +5,13 @@ import { useAuth } from '../../context/AuthContext';
 import { PageHeader } from '../ui/PageHeader';
 import { Badge } from '../ui/Badge';
 import { ProgressBar } from '../ui/ProgressBar';
+import { Modal } from '../ui/Modal';
+import {
+  SoundActionDiagram,
+  PostureAndHandLab,
+  KeyboardExplorerGame,
+  NotationTheoryLab,
+} from '../Labs';
 import {
   Lock,
   CheckCircle2,
@@ -19,6 +26,9 @@ import {
   ChevronUp,
   Compass,
   ArrowRight,
+  Hammer,
+  Layers,
+  Target,
 } from 'lucide-react';
 
 interface RoadmapViewProps {
@@ -32,12 +42,13 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
   onSelectLesson,
   onSelectHistory,
 }) => {
-  const { user } = useAuth();
+  const { user, awardLocalXp } = useAuth();
   const [tiers, setTiers] = useState<LearningTier[]>([]);
   const [historyChapters, setHistoryChapters] = useState<HistoryChapter[]>([]);
   const [progress, setProgress] = useState<Record<number, boolean>>({});
   const [expandedTiers, setExpandedTiers] = useState<Record<number, boolean>>({ 1: true });
   const [loading, setLoading] = useState(true);
+  const [activeLab, setActiveLab] = useState<'PHYSICS' | 'KEYBOARD' | 'POSTURE' | 'NOTATION' | null>(null);
 
   const userXp = user?.totalXp || 0;
   const instrumentName =
@@ -197,6 +208,97 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
               {/* Levels & Lessons Breakdown */}
               {isUnlocked && isExpanded && (
                 <div className="p-4 sm:p-6 pt-0 border-t border-slate-800/80 space-y-4 mt-2 min-w-0">
+                  {/* Interactive Pedagogical Labs Showcase for Piano Tier 1 */}
+                  {selectedInstrument === 'piano' && tier.tierOrder === 1 && (
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/30 border border-slate-800 space-y-3 shadow-xl">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <Sparkles size={16} className="text-amber-400 shrink-0" />
+                          <h4 className="text-sm font-bold text-white">Interactive Pedagogical Labs (4 Active Labs)</h4>
+                        </div>
+                        <span className="text-[11px] text-slate-400">Launch any laboratory environment directly</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Lab 1 */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveLab('PHYSICS')}
+                          className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 hover:border-indigo-500/50 text-left transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="w-8 h-8 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center font-bold">
+                                <Hammer size={16} />
+                              </span>
+                              <Badge variant="indigo" size="sm">Level 1</Badge>
+                            </div>
+                            <h5 className="text-xs font-bold text-white">Sound Action Physics</h5>
+                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">60 FPS mechanism simulation, escapement, dampers &amp; soundboard.</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-indigo-400 mt-3 flex items-center gap-1">Launch Lab →</span>
+                        </button>
+
+                        {/* Lab 2 */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveLab('KEYBOARD')}
+                          className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 hover:border-amber-500/50 text-left transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                                <Target size={16} />
+                              </span>
+                              <Badge variant="gold" size="sm">Level 2</Badge>
+                            </div>
+                            <h5 className="text-xs font-bold text-white">Keyboard Explorer</h5>
+                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">Interactive note geography, landmark identification &amp; octave recognition.</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-amber-400 mt-3 flex items-center gap-1">Play Game →</span>
+                        </button>
+
+                        {/* Lab 3 */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveLab('POSTURE')}
+                          className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 hover:border-emerald-500/50 text-left transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                                <Layers size={16} />
+                              </span>
+                              <Badge variant="emerald" size="sm">Level 3</Badge>
+                            </div>
+                            <h5 className="text-xs font-bold text-white">Posture &amp; Hand Lab</h5>
+                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">Biomechanics, bench height, knuckle arch, and 1–5 finger numbering.</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-emerald-400 mt-3 flex items-center gap-1">Inspect Ergonomics →</span>
+                        </button>
+
+                        {/* Lab 4 */}
+                        <button
+                          type="button"
+                          onClick={() => setActiveLab('NOTATION')}
+                          className="p-3.5 rounded-xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 hover:border-purple-500/50 text-left transition-all cursor-pointer flex flex-col justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+                                <Music size={16} />
+                              </span>
+                              <Badge variant="indigo" size="sm">Level 2/3</Badge>
+                            </div>
+                            <h5 className="text-xs font-bold text-white">Notation Theory Lab</h5>
+                            <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">Treble clef lines &amp; spaces, piano key sync, and note duration rhythms.</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-purple-400 mt-3 flex items-center gap-1">Explore Notation →</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {tier.levels.map((level) => {
                     const isLevel1 = level.levelNumber === 1 && tier.tierOrder === 1;
 
@@ -327,6 +429,59 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
           );
         })}
       </div>
+
+      {/* Interactive Lab Modal */}
+      {activeLab && (
+        <Modal
+          isOpen={Boolean(activeLab)}
+          onClose={() => setActiveLab(null)}
+          title={
+            activeLab === 'PHYSICS'
+              ? 'Sound Action & Escapement Physics Lab'
+              : activeLab === 'KEYBOARD'
+              ? 'Keyboard Explorer Game'
+              : activeLab === 'POSTURE'
+              ? 'Posture & Hand Positioning Lab'
+              : 'Notation Theory & Rhythms Lab'
+          }
+          size="xl"
+        >
+          <div className="py-2 max-h-[75dvh] overflow-y-auto pr-1">
+            {activeLab === 'PHYSICS' && (
+              <SoundActionDiagram
+                onLabComplete={() => {
+                  awardLocalXp(50);
+                  setActiveLab(null);
+                }}
+              />
+            )}
+            {activeLab === 'KEYBOARD' && (
+              <KeyboardExplorerGame
+                onGameComplete={() => {
+                  awardLocalXp(50);
+                  setActiveLab(null);
+                }}
+              />
+            )}
+            {activeLab === 'POSTURE' && (
+              <PostureAndHandLab
+                onLabComplete={() => {
+                  awardLocalXp(50);
+                  setActiveLab(null);
+                }}
+              />
+            )}
+            {activeLab === 'NOTATION' && (
+              <NotationTheoryLab
+                onLabComplete={() => {
+                  awardLocalXp(50);
+                  setActiveLab(null);
+                }}
+              />
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };
