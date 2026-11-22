@@ -14,6 +14,8 @@ import {
   ChevronRight,
   BookOpen,
   Sparkles,
+  ShieldCheck,
+  FileCheck2,
 } from 'lucide-react';
 
 export type NavigationTab =
@@ -23,6 +25,8 @@ export type NavigationTab =
   | 'PIANO'
   | 'EAR_TRAINING'
   | 'STUDIO'
+  | 'ASSESSMENTS'
+  | 'CERTIFICATE'
   | 'BADGES'
   | 'PROGRESS'
   | 'ADMIN';
@@ -59,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   const achievementItems = [
+    { id: 'ASSESSMENTS' as NavigationTab, label: 'Graded Exams', icon: <ShieldCheck size={18} /> },
     { id: 'BADGES' as NavigationTab, label: 'Achievements', icon: <Award size={18} /> },
     { id: 'PROGRESS' as NavigationTab, label: 'My Progress', icon: <BarChart2 size={18} /> },
   ];

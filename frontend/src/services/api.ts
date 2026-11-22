@@ -9,7 +9,15 @@ import {
   PracticeStats,
   Badge, 
   UserBadge, 
-  LeaderboardEntry 
+  LeaderboardEntry,
+  AssessmentItem,
+  AssessmentQuestion,
+  SubmitAssessmentPayload,
+  AssessmentResult,
+  AssessmentAttemptHistory,
+  GraduationStatus,
+  CertificateData,
+  AdminAssessmentStats 
 } from '../types';
 
 const DEFAULT_API_URL = import.meta.env.PROD 
@@ -294,6 +302,55 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(lesson),
     });
+  }
+
+  // Phase 4: Graded Piano Assessments & Graduation Endpoints
+  public async getAssessments(): Promise<AssessmentItem[]> {
+    return this.request<AssessmentItem[]>('/assessments');
+  }
+
+  public async getAssessmentQuestions(level: number): Promise<AssessmentQuestion[]> {
+    return this.request<AssessmentQuestion[]>(`/assessments/${level}`);
+  }
+
+  public async startAssessmentAttempt(level: number): Promise<{ attemptId: number; level: number; startedAt: string }> {
+    return this.request<{ attemptId: number; level: number; startedAt: string }>(`/assessments/${level}/start`, {
+      method: 'POST',
+    });
+  }
+
+  public async submitAssessmentAttempt(attemptId: number, payload: SubmitAssessmentPayload): Promise<AssessmentResult> {
+    return this.request<AssessmentResult>(`/assessments/attempts/${attemptId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  }
+
+  public async getAssessmentAttempts(): Promise<AssessmentAttemptHistory[]> {
+    return this.request<AssessmentAttemptHistory[]>('/assessments/attempts');
+  }
+
+  public async getGraduationStatus(): Promise<GraduationStatus> {
+    return this.request<GraduationStatus>('/assessments/graduation/status');
+  }
+
+  public async claimCertificate(studentDisplayName?: string): Promise<CertificateData> {
+    return this.request<CertificateData>('/assessments/graduation/certificate', {
+      method: 'POST',
+      body: JSON.stringify({ studentDisplayName }),
+    });
+  }
+
+  public async getCertificate(): Promise<CertificateData> {
+    return this.request<CertificateData>('/assessments/graduation/certificate');
+  }
+
+  public async verifyCertificate(certificateNumber: string): Promise<CertificateData> {
+    return this.request<CertificateData>(`/assessments/verify/${certificateNumber}`);
+  }
+
+  public async getAdminAssessmentStats(): Promise<AdminAssessmentStats> {
+    return this.request<AdminAssessmentStats>('/assessments/admin/stats');
   }
 }
 

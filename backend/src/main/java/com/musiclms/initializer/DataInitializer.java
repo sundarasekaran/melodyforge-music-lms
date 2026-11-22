@@ -96,7 +96,11 @@ public class DataInitializer implements CommandLineRunner {
                 new Badge("FIRST_PRACTICE", "Practice Pioneer", "Completed your first structured conservatory practice routine", "clock", "PRACTICE", 50),
                 new Badge("RHYTHM_BEGINNER", "Rhythm Cadence", "Locked into a steady metronome pulse for 5+ minutes", "activity", "PRACTICE", 75),
                 new Badge("CONSISTENT_PRACTITIONER", "Consistent Virtuoso", "Completed 5 or more structured practice sessions", "check-circle", "PRACTICE", 150),
-                new Badge("TEMPO_MASTER", "Tempo Master", "Completed practice drills across multiple tempo ranges", "gauge", "PRACTICE", 100)
+                new Badge("TEMPO_MASTER", "Tempo Master", "Completed practice drills across multiple tempo ranges", "gauge", "PRACTICE", 100),
+                new Badge("FIRST_ASSESSMENT", "Assessment Pioneer", "Passed your first graded conservatory assessment", "award", "MASTERY", 75),
+                new Badge("ASSESSMENT_EXCELLENCE", "Conservatory Honors", "Scored 90% or higher on an assessment", "star", "MASTERY", 125),
+                new Badge("PIANO_GRADUATE", "Piano Graduate", "Completed all three levels and earned the Conservatory Graduation Certificate", "crown", "MASTERY", 300),
+                new Badge("PERFECT_PERFORMANCE", "Perfect Cadence", "Achieved a flawless 100% score on a graded assessment", "zap", "MASTERY", 200)
         );
         badgeRepository.saveAll(badges);
     }

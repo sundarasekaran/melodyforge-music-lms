@@ -197,5 +197,124 @@ export interface LeaderboardEntry {
   currentStreakDays: number;
 }
 
+// Phase 4: Graded Piano Assessments & Graduation Types
+export interface AssessmentQuestion {
+  id: number;
+  level: number;
+  questionOrder: number;
+  title: string;
+  prompt: string;
+  type: 'MULTIPLE_CHOICE' | 'IDENTIFY_KEY' | 'PLAY_SEQUENCE';
+  category: string;
+  options?: string[];
+  targetNote?: string;
+  sequenceLength?: number;
+  hint?: string;
+  points: number;
+}
+
+export interface AssessmentItem {
+  level: number;
+  title: string;
+  description: string;
+  passingScorePercent: number;
+  totalQuestions: number;
+  totalPoints: number;
+  xpReward: number;
+  isLocked: boolean;
+  userBestScore?: number;
+  passed?: boolean;
+  totalAttempts?: number;
+  lastAttemptAt?: string;
+}
+
+export interface SubmittedAnswer {
+  questionId: number;
+  selectedOptionIndex?: number;
+  playedNote?: string;
+  playedSequence?: string[];
+}
+
+export interface SubmitAssessmentPayload {
+  answers: SubmittedAnswer[];
+}
+
+export interface QuestionGradingResult {
+  questionId: number;
+  correct: boolean;
+  pointsEarned: number;
+  feedback: string;
+}
+
+export interface AssessmentResult {
+  attemptId: number;
+  level: number;
+  scorePercent: number;
+  passingScorePercent: number;
+  passed: boolean;
+  earnedPoints: number;
+  totalPoints: number;
+  xpAwarded: number;
+  newTotalXp: number;
+  currentStreakDays: number;
+  graduationEligible: boolean;
+  questionResults: QuestionGradingResult[];
+  newBadges: Array<{
+    code: string;
+    title: string;
+    description: string;
+  }>;
+}
+
+export interface AssessmentAttemptHistory {
+  id: number;
+  level: number;
+  scorePercent: number;
+  totalPoints: number;
+  earnedPoints: number;
+  passed: boolean;
+  xpAwarded: number;
+  startedAt: string;
+  completedAt?: string;
+}
+
+export interface GraduationStatus {
+  eligible: boolean;
+  hasCertificate: boolean;
+  certificateNumber?: string;
+  certificateDate?: string;
+  studentDisplayName: string;
+  level1Passed: boolean;
+  level1BestScore: number;
+  level2Passed: boolean;
+  level2BestScore: number;
+  level3Passed: boolean;
+  level3BestScore: number;
+  missingRequirements: string[];
+}
+
+export interface CertificateData {
+  id: number;
+  certificateNumber: string;
+  studentDisplayName: string;
+  instrumentName: string;
+  instrumentSlug: string;
+  issueDate: string;
+  verificationHash: string;
+  averageScorePercent: number;
+  totalXpAtGraduation: number;
+  institutionName: string;
+}
+
+export interface AdminAssessmentStats {
+  totalAttempts: number;
+  passedAttempts: number;
+  totalCertificatesIssued: number;
+  level1PassRate: number;
+  level2PassRate: number;
+  level3PassRate: number;
+  certificates: CertificateData[];
+}
+
 export * from './piano.ts';
 

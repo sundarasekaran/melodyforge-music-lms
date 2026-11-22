@@ -35,12 +35,14 @@ interface RoadmapViewProps {
   selectedInstrument?: string;
   onSelectLesson: (lessonId: number) => void;
   onSelectHistory?: () => void;
+  onOpenAssessments?: (level?: number) => void;
 }
 
 export const RoadmapView: React.FC<RoadmapViewProps> = ({
   selectedInstrument = 'piano',
   onSelectLesson,
   onSelectHistory,
+  onOpenAssessments,
 }) => {
   const { user, awardLocalXp } = useAuth();
   const [tiers, setTiers] = useState<LearningTier[]>([]);
@@ -142,6 +144,42 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
           </div>
         }
       />
+
+      {/* Official Graded Assessments Banner */}
+      {selectedInstrument === 'piano' && onOpenAssessments && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-950/70 via-slate-900 to-indigo-950/50 border border-amber-500/40 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shrink-0">
+              <Award size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
+                  Official Piano Examinations
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold">
+                  3 Levels
+                </span>
+              </div>
+              <h4 className="text-sm sm:text-base font-bold text-white mt-0.5">
+                Conservatory Graded Assessments & Graduation Diploma
+              </h4>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Pass Level 1 (70%), Level 2 (75%), and Level 3 (80%) to claim your official verified diploma.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onOpenAssessments()}
+            className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold text-xs hover:brightness-110 transition shadow-md flex items-center gap-1.5 whitespace-nowrap cursor-pointer shrink-0"
+          >
+            <span>View Assessments</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
 
       {/* 4 Tiers Progressive Accordion Stack */}
       <div className="space-y-5">

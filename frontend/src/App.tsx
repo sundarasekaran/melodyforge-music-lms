@@ -15,6 +15,8 @@ import { BadgesGallery } from './components/Gamification/BadgesGallery';
 import { Leaderboard } from './components/Gamification/Leaderboard';
 import { MyProgressView } from './components/Progress/MyProgressView';
 import { AdminPortal } from './components/Admin/AdminPortal';
+import { AssessmentsOverview, AssessmentRunner, GraduationCertificate } from './components/Assessments';
+import { AssessmentItem } from './types';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { Button } from './components/ui/Button';
 import { Music } from 'lucide-react';
@@ -25,6 +27,7 @@ const MainApp: React.FC = () => {
   const [selectedInstrument, setSelectedInstrument] = useState<string>('piano');
   const [activeLessonId, setActiveLessonId] = useState<number | null>(null);
   const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
+  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentItem | null>(null);
 
   // App opening logo & first-time install detection
   const [showSplash, setShowSplash] = useState<boolean>(true);
@@ -60,6 +63,9 @@ const MainApp: React.FC = () => {
     if (tab !== 'ROADMAP') {
       setActiveLessonId(null);
       setIsViewingHistory(false);
+    }
+    if (tab !== 'ASSESSMENTS') {
+      setSelectedAssessment(null);
     }
   };
 
@@ -186,6 +192,10 @@ const MainApp: React.FC = () => {
                       setIsViewingHistory(true);
                       setActiveLessonId(null);
                     }}
+                    onOpenAssessments={() => {
+                      setActiveTab('ASSESSMENTS');
+                      setSelectedAssessment(null);
+                    }}
                   />
                 )
               )}
@@ -216,6 +226,33 @@ const MainApp: React.FC = () => {
               {/* TAB 7: Practice Studio & Audio Recorder */}
               {activeTab === 'STUDIO' && (
                 <PracticeStudio />
+              )}
+
+              {/* TAB: Piano Graded Assessments */}
+              {activeTab === 'ASSESSMENTS' && (
+                selectedAssessment ? (
+                  <AssessmentRunner
+                    assessment={selectedAssessment}
+                    onBack={() => setSelectedAssessment(null)}
+                    onComplete={() => {}}
+                    onViewCertificate={() => {
+                      setSelectedAssessment(null);
+                      setActiveTab('CERTIFICATE');
+                    }}
+                  />
+                ) : (
+                  <AssessmentsOverview
+                    onSelectAssessment={(item) => setSelectedAssessment(item)}
+                    onViewCertificate={() => setActiveTab('CERTIFICATE')}
+                  />
+                )
+              )}
+
+              {/* TAB: Conservatory Graduation Certificate */}
+              {activeTab === 'CERTIFICATE' && (
+                <GraduationCertificate
+                  onBack={() => setActiveTab('ASSESSMENTS')}
+                />
               )}
 
               {/* TAB 8: Badges & Achievements */}

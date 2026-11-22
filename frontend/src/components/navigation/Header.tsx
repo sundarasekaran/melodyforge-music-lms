@@ -47,6 +47,8 @@ export const Header: React.FC<HeaderProps> = ({
       case 'PIANO': return 'Concert Grand Virtual Piano';
       case 'EAR_TRAINING': return 'Ear Training Arena';
       case 'STUDIO': return 'Practice Studio & Recorder';
+      case 'ASSESSMENTS': return 'Piano Graded Assessments';
+      case 'CERTIFICATE': return 'Conservatory Graduation Diploma';
       case 'BADGES': return 'Achievements & Trophies';
       case 'PROGRESS': return 'Learning Progress & Analytics';
       case 'ADMIN': return 'Platform Administration';

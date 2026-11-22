@@ -16,7 +16,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 
-export type ActiveTab = 'ROADMAP' | 'HISTORY' | 'PIANO' | 'EAR_TRAINING' | 'STUDIO' | 'BADGES' | 'ADMIN';
+export type ActiveTab = 'ROADMAP' | 'HISTORY' | 'PIANO' | 'EAR_TRAINING' | 'STUDIO' | 'BADGES' | 'ADMIN' | 'ASSESSMENTS' | 'CERTIFICATE';
 
 interface NavbarProps {
   activeTab: ActiveTab;

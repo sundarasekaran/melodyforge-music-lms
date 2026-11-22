@@ -1,14 +1,8 @@
 package com.musiclms.service;
 
 import com.musiclms.dto.LeaderboardResponse;
-import com.musiclms.model.entity.Badge;
-import com.musiclms.model.entity.User;
-import com.musiclms.model.entity.UserBadge;
-import com.musiclms.repository.BadgeRepository;
-import com.musiclms.repository.PracticeSessionRepository;
-import com.musiclms.repository.UserBadgeRepository;
-import com.musiclms.repository.UserProgressRepository;
-import com.musiclms.repository.UserRepository;
+import com.musiclms.model.entity.*;
+import com.musiclms.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,17 +19,23 @@ public class GamificationService {
     private final UserBadgeRepository userBadgeRepository;
     private final UserProgressRepository userProgressRepository;
     private final PracticeSessionRepository practiceSessionRepository;
+    private final AssessmentAttemptRepository assessmentAttemptRepository;
+    private final CertificateRepository certificateRepository;
 
     public GamificationService(UserRepository userRepository,
                                BadgeRepository badgeRepository,
                                UserBadgeRepository userBadgeRepository,
                                UserProgressRepository userProgressRepository,
-                               PracticeSessionRepository practiceSessionRepository) {
+                               PracticeSessionRepository practiceSessionRepository,
+                               AssessmentAttemptRepository assessmentAttemptRepository,
+                               CertificateRepository certificateRepository) {
         this.userRepository = userRepository;
         this.badgeRepository = badgeRepository;
         this.userBadgeRepository = userBadgeRepository;
         this.userProgressRepository = userProgressRepository;
         this.practiceSessionRepository = practiceSessionRepository;
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.certificateRepository = certificateRepository;
     }
 
     @Transactional
@@ -114,6 +114,30 @@ public class GamificationService {
                 .anyMatch(s -> s.getDurationSeconds() != null && s.getDurationSeconds() >= 300);
         if (hasFiveMinPractice) {
             awardBadgeIfNotPresent(user, "RHYTHM_BEGINNER");
+        }
+
+        // --- Phase 4: Graded Assessment & Graduation Achievements ---
+        long passedAssessmentsCount = assessmentAttemptRepository.countByUserAndPassedTrue(user);
+        if (passedAssessmentsCount >= 1) {
+            awardBadgeIfNotPresent(user, "FIRST_ASSESSMENT");
+        }
+
+        List<AssessmentAttempt> attempts = assessmentAttemptRepository.findByUserOrderByStartedAtDesc(user);
+        boolean hasExcellence = attempts.stream()
+                .anyMatch(a -> a.getPassed() != null && a.getPassed() && a.getScorePercent() >= 90);
+        if (hasExcellence) {
+            awardBadgeIfNotPresent(user, "ASSESSMENT_EXCELLENCE");
+        }
+
+        boolean hasPerfectScore = attempts.stream()
+                .anyMatch(a -> a.getPassed() != null && a.getPassed() && a.getScorePercent() == 100);
+        if (hasPerfectScore) {
+            awardBadgeIfNotPresent(user, "PERFECT_PERFORMANCE");
+        }
+
+        boolean hasCertificate = certificateRepository.existsByUserAndInstrumentSlug(user, "piano");
+        if (hasCertificate) {
+            awardBadgeIfNotPresent(user, "PIANO_GRADUATE");
         }
     }
 
