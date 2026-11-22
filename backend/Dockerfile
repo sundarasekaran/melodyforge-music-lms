@@ -3,18 +3,18 @@
 FROM maven:3.9.6-eclipse-temurin-17 AS builder
 WORKDIR /app
 
-# Cache Maven dependencies and plugins with controlled bounded retries and exponential backoff
-# Mitigates transient Maven Central HTTP 429 (Too Many Requests) and network drops on shared cloud build IPs
+# Copy Maven settings with Google Cloud Storage mirror and pom.xml first to leverage Docker layer caching
+COPY .mvn/settings.xml .mvn/settings.xml
 COPY pom.xml .
+
+# Pre-fetch parent POM, plugins, and dependencies via Google Cloud Storage Maven Central mirror
+# Mitigates persistent Maven Central HTTP 429 rate limiting on shared cloud build IPs
 RUN set -e; \
-    max_attempts=5; \
+    max_attempts=3; \
     delay=5; \
-    for attempt in 1 2 3 4 5; do \
-      echo "=== [Step 1/2] Resolving Maven dependencies (Attempt $attempt of $max_attempts) ==="; \
-      if mvn dependency:resolve dependency:resolve-plugins -B \
-          -Dmaven.wagon.http.pool=false \
-          -Dhttp.keepAlive=false \
-          -Dmaven.wagon.httpconnectionManager.maxPerRoute=2; then \
+    for attempt in 1 2 3; do \
+      echo "=== [Step 1/2] Resolving Maven dependencies via GCS mirror (Attempt $attempt of $max_attempts) ==="; \
+      if mvn --settings .mvn/settings.xml dependency:resolve dependency:resolve-plugins -B; then \
         echo "=== [Step 1/2] Dependencies and plugins successfully resolved ==="; \
         break; \
       fi; \
@@ -22,7 +22,7 @@ RUN set -e; \
         echo "ERROR: Failed to resolve Maven dependencies after $max_attempts attempts." >&2; \
         exit 1; \
       fi; \
-      echo "WARNING: Maven resolution failed (HTTP 429 or network issue). Retrying in ${delay}s..." >&2; \
+      echo "WARNING: Maven resolution failed. Retrying in ${delay}s..." >&2; \
       sleep "$delay"; \
       delay=$((delay * 2)); \
     done
@@ -30,24 +30,21 @@ RUN set -e; \
 # Copy application source code
 COPY src ./src
 
-# Build production Spring Boot executable JAR with controlled retries
+# Build production Spring Boot executable JAR using GCS mirror with controlled retries
 RUN set -e; \
     max_attempts=3; \
     delay=5; \
     for attempt in 1 2 3; do \
       echo "=== [Step 2/2] Packaging application JAR (Attempt $attempt of $max_attempts) ==="; \
-      if mvn clean package -DskipTests -B \
-          -Dmaven.wagon.http.pool=false \
-          -Dhttp.keepAlive=false \
-          -Dmaven.wagon.httpconnectionManager.maxPerRoute=2; then \
+      if mvn --settings .mvn/settings.xml clean package -DskipTests -B; then \
         echo "=== [Step 2/2] Application JAR successfully created ==="; \
         break; \
       fi; \
       if [ "$attempt" -eq "$max_attempts" ]; then \
-        echo "ERROR: Maven package failed after $max_attempts attempts." >&2; \
+        echo "ERROR: Maven build failed after $max_attempts attempts." >&2; \
         exit 1; \
       fi; \
-      echo "WARNING: Maven package failed. Retrying in ${delay}s..." >&2; \
+      echo "WARNING: Maven build failed. Retrying in ${delay}s..." >&2; \
       sleep "$delay"; \
       delay=$((delay * 2)); \
     done
