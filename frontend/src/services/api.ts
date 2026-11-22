@@ -6,6 +6,7 @@ import {
   Lesson, 
   UserProgress, 
   PracticeSession, 
+  PracticeStats,
   Badge, 
   UserBadge, 
   LeaderboardEntry 
@@ -190,6 +191,54 @@ class ApiService {
 
   public async getPracticeSessions(): Promise<PracticeSession[]> {
     return this.request<PracticeSession[]>('/practice/sessions');
+  }
+
+  // Structured Practice Routine Endpoints
+  public async startPracticeRoutine(data: {
+    instrumentSlug: string;
+    routineId: string;
+    routineTitle: string;
+    targetBpm: number;
+    timeSignature: string;
+    totalExercises: number;
+  }): Promise<PracticeSession> {
+    return this.request<PracticeSession>('/practice/routines/start', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async updatePracticeRoutineProgress(
+    sessionId: number,
+    data: {
+      durationSeconds: number;
+      completedExercises: number;
+      notes?: string;
+    }
+  ): Promise<PracticeSession> {
+    return this.request<PracticeSession>(`/practice/routines/${sessionId}/progress`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async completePracticeRoutine(
+    sessionId: number,
+    data: {
+      durationSeconds: number;
+      completedExercises: number;
+      notes?: string;
+      audioRecordingUrl?: string;
+    }
+  ): Promise<PracticeSession> {
+    return this.request<PracticeSession>(`/practice/routines/${sessionId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  public async getPracticeStats(): Promise<PracticeStats> {
+    return this.request<PracticeStats>('/practice/routines/stats');
   }
 
   // Gamification Endpoints

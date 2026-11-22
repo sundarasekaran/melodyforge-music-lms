@@ -512,29 +512,54 @@ class AudioEngine {
   // --- METRONOME CLICK SYNTHESIZER ---
 
   /**
-   * Metronome click sound with high-pitch wooden accent on beat 1.
+   * Retrieves the underlying Web Audio Context current timeline in seconds.
    */
-  public playMetronomeClick(accent = false) {
+  public getAudioContextTime(): number {
+    const ctx = this.unlockSync();
+    return ctx ? ctx.currentTime : 0;
+  }
+
+  /**
+   * Schedules a metronome click at an exact Web Audio timeline timestamp.
+   * Eliminates timing drift by utilizing sample-accurate native audio scheduling.
+   *
+   * @param time Exact AudioContext.currentTime timestamp in seconds
+   * @param accent Whether this click represents beat 1 (downbeat)
+   * @param volume Metronome volume scalar between 0.0 and 1.0
+   */
+  public scheduleMetronomeClick(time: number, accent = false, volume = 1.0): void {
     const ctx = this.unlockSync();
     if (!ctx || !this.compressor) return;
 
-    const now = ctx.currentTime;
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    if (clampedVolume === 0) return;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
-    // High accent: 1800 Hz / Regular beat: 1200 Hz
+    // High wooden accent on beat 1: 1800 Hz / Regular beat: 1200 Hz
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(accent ? 1800 : 1200, now);
+    osc.frequency.setValueAtTime(accent ? 1800 : 1200, time);
 
-    const peak = accent ? 0.45 : 0.28;
-    gain.gain.setValueAtTime(peak, now);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+    const peak = (accent ? 0.45 : 0.28) * clampedVolume;
+    gain.gain.setValueAtTime(Math.max(0.0001, peak), time);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.04);
 
     osc.connect(gain);
     gain.connect(this.compressor);
 
-    osc.start(now);
-    osc.stop(now + 0.05);
+    osc.start(time);
+    osc.stop(time + 0.05);
+  }
+
+  /**
+   * Metronome click sound with high-pitch wooden accent on beat 1.
+   * Plays immediately at ctx.currentTime for backward compatibility.
+   */
+  public playMetronomeClick(accent = false, volume = 1.0): void {
+    const ctx = this.unlockSync();
+    const now = ctx ? ctx.currentTime : 0;
+    this.scheduleMetronomeClick(now, accent, volume);
   }
 
   // --- AUDIO RECORDING ENGINE (MediaRecorder with iOS MP4 & Android/Desktop WebM) ---

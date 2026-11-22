@@ -153,6 +153,23 @@ export interface PracticeSession {
   audioRecordingUrl?: string;
   xpEarned: number;
   practicedAt: string;
+  routineId?: string;
+  routineTitle?: string;
+  targetBpm?: number;
+  timeSignature?: string;
+  completedExercises?: number;
+  totalExercises?: number;
+  status?: 'IN_PROGRESS' | 'COMPLETED' | 'INTERRUPTED';
+  startedAt?: string;
+  completedAt?: string;
+}
+
+export interface PracticeStats {
+  totalPracticeSeconds: number;
+  totalSessionsCompleted: number;
+  routinesCompletedCount: number;
+  currentStreakDays: number;
+  totalPracticeXp: number;
 }
 
 export interface Badge {

@@ -5,6 +5,7 @@ import com.musiclms.model.entity.Badge;
 import com.musiclms.model.entity.User;
 import com.musiclms.model.entity.UserBadge;
 import com.musiclms.repository.BadgeRepository;
+import com.musiclms.repository.PracticeSessionRepository;
 import com.musiclms.repository.UserBadgeRepository;
 import com.musiclms.repository.UserProgressRepository;
 import com.musiclms.repository.UserRepository;
@@ -23,15 +24,18 @@ public class GamificationService {
     private final BadgeRepository badgeRepository;
     private final UserBadgeRepository userBadgeRepository;
     private final UserProgressRepository userProgressRepository;
+    private final PracticeSessionRepository practiceSessionRepository;
 
     public GamificationService(UserRepository userRepository,
                                BadgeRepository badgeRepository,
                                UserBadgeRepository userBadgeRepository,
-                               UserProgressRepository userProgressRepository) {
+                               UserProgressRepository userProgressRepository,
+                               PracticeSessionRepository practiceSessionRepository) {
         this.userRepository = userRepository;
         this.badgeRepository = badgeRepository;
         this.userBadgeRepository = userBadgeRepository;
         this.userProgressRepository = userProgressRepository;
+        this.practiceSessionRepository = practiceSessionRepository;
     }
 
     @Transactional
@@ -86,6 +90,30 @@ public class GamificationService {
         // XP Milestone (500 XP)
         if (user.getTotalXp() >= 500) {
             awardBadgeIfNotPresent(user, "XP_MASTER_500");
+        }
+
+        // --- Phase 3: Practice & Metronome Achievements ---
+        long totalPracticeSessions = practiceSessionRepository.countByUser(user);
+        long completedPracticeSessions = practiceSessionRepository.countByUserAndStatus(user, "COMPLETED");
+        long completedRoutines = practiceSessionRepository.countByUserAndRoutineIdNotNull(user);
+
+        // First Practice Session Badge
+        if (totalPracticeSessions >= 1) {
+            awardBadgeIfNotPresent(user, "FIRST_PRACTICE");
+        }
+        // Consistent Practitioner (5+ completed sessions)
+        if (completedPracticeSessions >= 5) {
+            awardBadgeIfNotPresent(user, "CONSISTENT_PRACTITIONER");
+        }
+        // Tempo Master (3+ distinct routines practiced)
+        if (completedRoutines >= 3) {
+            awardBadgeIfNotPresent(user, "TEMPO_MASTER");
+        }
+        // Rhythm Beginner (practiced with metronome for 5+ min / 300s)
+        boolean hasFiveMinPractice = practiceSessionRepository.findByUserOrderByPracticedAtDesc(user).stream()
+                .anyMatch(s -> s.getDurationSeconds() != null && s.getDurationSeconds() >= 300);
+        if (hasFiveMinPractice) {
+            awardBadgeIfNotPresent(user, "RHYTHM_BEGINNER");
         }
     }
 

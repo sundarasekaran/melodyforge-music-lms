@@ -13,4 +13,8 @@ public interface PracticeSessionRepository extends JpaRepository<PracticeSession
     List<PracticeSession> findByUserOrderByPracticedAtDesc(User user);
     List<PracticeSession> findByUserAndInstrumentOrderByPracticedAtDesc(User user, Instrument instrument);
     List<PracticeSession> findTop10ByUserIdOrderByPracticedAtDesc(Long userId);
+    List<PracticeSession> findByUserAndStatusOrderByPracticedAtDesc(User user, String status);
+    long countByUser(User user);
+    long countByUserAndStatus(User user, String status);
+    long countByUserAndRoutineIdNotNull(User user);
 }

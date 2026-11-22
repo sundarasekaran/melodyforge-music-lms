@@ -92,7 +92,11 @@ public class DataInitializer implements CommandLineRunner {
                 new Badge("STREAK_3_DAYS", "3-Day Cadence", "Practiced 3 days consecutively", "flame", "STREAK", 100),
                 new Badge("STREAK_7_DAYS", "Weekly Virtuoso", "Maintained a 7-day practice streak", "zap", "STREAK", 200),
                 new Badge("BASICS_GRADUATE", "Basics Master", "Graduated from Tier 1: Basics", "award", "MASTERY", 300),
-                new Badge("XP_MASTER_500", "500 Club", "Accumulated over 500 Experience Points", "star", "MASTERY", 150)
+                new Badge("XP_MASTER_500", "500 Club", "Accumulated over 500 Experience Points", "star", "MASTERY", 150),
+                new Badge("FIRST_PRACTICE", "Practice Pioneer", "Completed your first structured conservatory practice routine", "clock", "PRACTICE", 50),
+                new Badge("RHYTHM_BEGINNER", "Rhythm Cadence", "Locked into a steady metronome pulse for 5+ minutes", "activity", "PRACTICE", 75),
+                new Badge("CONSISTENT_PRACTITIONER", "Consistent Virtuoso", "Completed 5 or more structured practice sessions", "check-circle", "PRACTICE", 150),
+                new Badge("TEMPO_MASTER", "Tempo Master", "Completed practice drills across multiple tempo ranges", "gauge", "PRACTICE", 100)
         );
         badgeRepository.saveAll(badges);
     }
