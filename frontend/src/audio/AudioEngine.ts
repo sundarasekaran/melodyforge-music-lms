@@ -81,6 +81,18 @@ class AudioEngine {
     window.addEventListener('pointerdown', unlockHandler, { capture: true, passive: true });
     window.addEventListener('mousedown', unlockHandler, { capture: true, passive: true });
     window.addEventListener('keydown', unlockHandler, { capture: true, passive: true });
+
+    // Background pause cleanup: immediately terminate ringing voices when app is backgrounded
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          this.stopAllNotes(true);
+        }
+      });
+      window.addEventListener('pagehide', () => {
+        this.stopAllNotes(true);
+      });
+    }
   }
 
   private initContextSync(): AudioContext | null {
@@ -445,6 +457,17 @@ class AudioEngine {
 
   public releaseNote(noteOrMidi: string | number) {
     this.stopNote(noteOrMidi);
+  }
+
+  /**
+   * Immediately stops all active and sustained voices (e.g. on navigation, pause, or backgrounding).
+   */
+  public stopAllNotes(immediate = false) {
+    this.heldKeys.clear();
+    this.sustainedNotes.clear();
+    Array.from(this.activeVoices.keys()).forEach((midi) => {
+      this.releaseVoice(midi, immediate);
+    });
   }
 
   private releaseVoice(midi: number, immediate = false) {

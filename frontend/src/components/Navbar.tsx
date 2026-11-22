@@ -37,9 +37,9 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const instruments = [
     { slug: 'piano', name: 'Piano & Keyboard', active: true, icon: '🎹' },
-    { slug: 'guitar', name: 'Guitar', active: false, icon: '🎸' },
-    { slug: 'violin', name: 'Violin', active: false, icon: '🎻' },
-    { slug: 'drums', name: 'Drums', active: false, icon: '🥁' },
+    { slug: 'guitar', name: 'Guitar', active: true, icon: '🎸' },
+    { slug: 'violin', name: 'Violin', active: true, icon: '🎻' },
+    { slug: 'drums', name: 'Drums', active: true, icon: '🥁' },
   ];
 
   const currentInst = instruments.find((i) => i.slug === selectedInstrument) || instruments[0];

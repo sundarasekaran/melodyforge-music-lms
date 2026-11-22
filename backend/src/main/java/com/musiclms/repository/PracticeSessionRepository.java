@@ -6,6 +6,7 @@ import com.musiclms.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -17,4 +18,6 @@ public interface PracticeSessionRepository extends JpaRepository<PracticeSession
     long countByUser(User user);
     long countByUserAndStatus(User user, String status);
     long countByUserAndRoutineIdNotNull(User user);
+    long countByInstrument(Instrument instrument);
+    List<PracticeSession> findByPracticedAtAfter(LocalDateTime dateTime);
 }

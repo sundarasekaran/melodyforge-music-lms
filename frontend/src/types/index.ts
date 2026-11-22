@@ -316,5 +316,133 @@ export interface AdminAssessmentStats {
   certificates: CertificateData[];
 }
 
+// Phase 5: Student & Platform Admin Analytics Types
+export interface InstrumentProgress {
+  slug: string;
+  name: string;
+  family: string;
+  completedLessons: number;
+  totalLessons: number;
+  completionPercent: number;
+  practiceMinutes: number;
+}
+
+export interface DailyPracticeRecord {
+  dayName: string;
+  date: string;
+  durationMinutes: number;
+  sessionCount: number;
+}
+
+export interface AssessmentScoreRecord {
+  level: number;
+  scorePercent: number;
+  passed: boolean;
+  earnedPoints: number;
+  totalPoints: number;
+  completedAt: string;
+}
+
+export interface RecentActivityItem {
+  type: string; // 'LESSON' | 'PRACTICE' | 'ASSESSMENT' | 'BADGE'
+  title: string;
+  description: string;
+  xpEarned: number;
+  timestamp: string;
+}
+
+export interface StudentAnalytics {
+  totalLearningMinutes: number;
+  totalPracticeSeconds: number;
+  totalPracticeMinutes: number;
+  completedLessonsCount: number;
+  completedRoutinesCount: number;
+  assessmentAttemptsCount: number;
+  assessmentPassedCount: number;
+  assessmentPassRate: number;
+  bestAssessmentScore: number;
+  currentXp: number;
+  totalXp: number;
+  currentLevel: number;
+  currentStreakDays: number;
+  earnedBadgesCount: number;
+  instrumentProgress: InstrumentProgress[];
+  weeklyPractice: DailyPracticeRecord[];
+  scoreHistory: AssessmentScoreRecord[];
+  recentActivities: RecentActivityItem[];
+}
+
+export interface InstrumentEngagement {
+  slug: string;
+  name: string;
+  family: string;
+  activeLearners: number;
+  completedLessons: number;
+  practiceSessionsCount: number;
+  totalPracticeMinutes: number;
+}
+
+export interface LessonPopularity {
+  lessonId: number;
+  title: string;
+  instrumentName: string;
+  tierName: string;
+  completionsCount: number;
+}
+
+export interface AssessmentLevelMetric {
+  level: number;
+  title: string;
+  passThresholdPercent: number;
+  totalAttempts: number;
+  passedCount: number;
+  passRate: number;
+  averageScore: number;
+}
+
+export interface WeeklyTrendItem {
+  date: string;
+  dayName: string;
+  practiceSessionCount: number;
+  lessonsCompletedCount: number;
+}
+
+export interface AdminPlatformAnalytics {
+  totalRegisteredStudents: number;
+  activeStudentsCount: number;
+  totalCompletedLessons: number;
+  totalPracticeSessions: number;
+  totalPracticeDurationMinutes: number;
+  totalAssessmentAttempts: number;
+  totalCertificatesIssued: number;
+  assessmentPassRate: number;
+  instrumentPopularity: InstrumentEngagement[];
+  mostCompletedLessons: LessonPopularity[];
+  assessmentLevelBreakdown: AssessmentLevelMetric[];
+  weeklyActivityTrend: WeeklyTrendItem[];
+}
+
+export interface StudentSummary {
+  id: number;
+  username: string;
+  displayName: string;
+  email: string;
+  role: string;
+  totalXp: number;
+  currentLevel: number;
+  currentStreakDays: number;
+  completedLessons: number;
+  totalPracticeMinutes: number;
+}
+
+export interface StudentSummaryPage {
+  students: StudentSummary[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
 export * from './piano.ts';
 

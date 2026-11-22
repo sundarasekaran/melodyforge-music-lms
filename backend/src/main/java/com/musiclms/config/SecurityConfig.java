@@ -50,7 +50,8 @@ public class SecurityConfig {
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/instruments", "/api/v1/instruments/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/gamification/leaderboard", "/api/v1/gamification/badges").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/assessments/verify/**").permitAll()
+                .requestMatchers("/api/v1/admin/**", "/api/v1/analytics/admin/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             );
 

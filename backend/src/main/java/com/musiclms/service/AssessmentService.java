@@ -557,7 +557,18 @@ public class AssessmentService {
     public CertificateResponse verifyCertificate(String certificateNumber) {
         Certificate cert = certificateRepository.findByCertificateNumber(certificateNumber)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid certificate number: " + certificateNumber));
-        return mapCertificateToResponse(cert);
+
+        // Authoritative Server-Side Re-computation of SHA-256 hash
+        String expectedPayload = cert.getCertificateNumber() + ":" + cert.getUser().getId() + ":" + cert.getFinalScorePercent() + ":MelodyForgeConservatory";
+        String recomputedHash = generateSha256(expectedPayload);
+        boolean hashMatches = recomputedHash.equalsIgnoreCase(cert.getVerificationHash());
+
+        CertificateResponse res = mapCertificateToResponse(cert);
+        res.setIsVerified(hashMatches);
+        if (!hashMatches) {
+            res.setStatus("REVOKED_OR_TAMPERED");
+        }
+        return res;
     }
 
     @Transactional(readOnly = true)

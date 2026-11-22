@@ -15,7 +15,9 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
     Optional<AssessmentAttempt> findTopByUserAndLevelAndPassedTrueOrderByScorePercentDesc(User user, Integer level);
     Optional<AssessmentAttempt> findTopByUserAndLevelOrderByAttemptNumberDesc(User user, Integer level);
     boolean existsByUserAndLevelAndPassedTrue(User user, Integer level);
+    long countByUser(User user);
     long countByUserAndPassedTrue(User user);
+    long countByPassedTrue();
     long countByLevel(Integer level);
     long countByLevelAndPassedTrue(Integer level);
 }

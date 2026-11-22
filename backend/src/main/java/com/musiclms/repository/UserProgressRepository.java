@@ -14,5 +14,7 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, Long
     Optional<UserProgress> findByUserAndLesson(User user, Lesson lesson);
     List<UserProgress> findByUser(User user);
     List<UserProgress> findByUserId(Long userId);
+    List<UserProgress> findByUserOrderByCompletedAtDesc(User user);
     Long countByUserAndCompletedTrue(User user);
+    Long countByCompletedTrue();
 }

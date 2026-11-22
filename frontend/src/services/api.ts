@@ -17,7 +17,10 @@ import {
   AssessmentAttemptHistory,
   GraduationStatus,
   CertificateData,
-  AdminAssessmentStats 
+  AdminAssessmentStats,
+  StudentAnalytics,
+  AdminPlatformAnalytics,
+  StudentSummaryPage
 } from '../types';
 
 const DEFAULT_API_URL = import.meta.env.PROD 
@@ -351,6 +354,27 @@ class ApiService {
 
   public async getAdminAssessmentStats(): Promise<AdminAssessmentStats> {
     return this.request<AdminAssessmentStats>('/assessments/admin/stats');
+  }
+
+  // Phase 5: Student & Admin Platform Analytics Endpoints
+  public async getStudentAnalytics(instrument?: string, range?: string): Promise<StudentAnalytics> {
+    const params = new URLSearchParams();
+    if (instrument && instrument !== 'all') params.append('instrument', instrument);
+    if (range && range !== 'all') params.append('range', range);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return this.request<StudentAnalytics>(`/analytics/student${qs}`);
+  }
+
+  public async getAdminPlatformAnalytics(): Promise<AdminPlatformAnalytics> {
+    return this.request<AdminPlatformAnalytics>('/analytics/admin');
+  }
+
+  public async getPaginatedStudents(page = 0, size = 10, search?: string): Promise<StudentSummaryPage> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('size', String(size));
+    if (search && search.trim()) params.append('search', search.trim());
+    return this.request<StudentSummaryPage>(`/analytics/admin/students?${params.toString()}`);
   }
 }
 

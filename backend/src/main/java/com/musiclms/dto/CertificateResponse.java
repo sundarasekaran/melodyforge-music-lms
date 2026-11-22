@@ -13,6 +13,7 @@ public class CertificateResponse {
     private LocalDateTime conferredAt;
     private String verificationHash;
     private String status;
+    private Boolean isVerified = true;
 
     public CertificateResponse() {}
 
@@ -45,4 +46,7 @@ public class CertificateResponse {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Boolean getIsVerified() { return isVerified; }
+    public void setIsVerified(Boolean isVerified) { this.isVerified = isVerified; }
 }
