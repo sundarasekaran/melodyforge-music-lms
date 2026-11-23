@@ -11,7 +11,7 @@
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "lint": "oxlint",
-    "test": "node --experimental-strip-types --test src/tests/pianoAudioEngine.test.ts src/tests/pedagogicalLabs.test.ts src/tests/metronome.test.ts src/tests/practiceRoutines.test.ts src/tests/assessments.test.ts src/tests/analyticsAndMobile.test.ts",
+    "test": "node --experimental-strip-types --test src/tests/pianoAudioEngine.test.ts src/tests/pedagogicalLabs.test.ts src/tests/metronome.test.ts src/tests/practiceRoutines.test.ts src/tests/assessments.test.ts src/tests/analyticsAndMobile.test.ts src/tests/profileDropdown.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

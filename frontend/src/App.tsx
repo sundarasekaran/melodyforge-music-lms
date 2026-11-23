@@ -122,6 +122,7 @@ const MainApp: React.FC = () => {
           selectedInstrument={selectedInstrument}
           onInstrumentChange={(slug) => setSelectedInstrument(slug)}
           onMobileMenuToggle={() => setIsMobileNavOpen(!isMobileNavOpen)}
+          onNavigate={handleTabChange}
           breadcrumb={
             isViewingHistory
               ? `${selectedInstrument.charAt(0).toUpperCase() + selectedInstrument.slice(1)} History`
