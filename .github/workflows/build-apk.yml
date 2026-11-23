@@ -44,7 +44,7 @@ jobs:
       - name: Build Web Application
         run: npm run build
         env:
-          VITE_API_URL: https://melodyforge-music-lms-backend.onrender.com
+          VITE_API_URL: https://melodyforge-music-lms.onrender.com
 
       - name: Sync Capacitor Android
         run: npx cap sync android
@@ -85,7 +85,7 @@ jobs:
             - **Android**: Download `MelodyForge.apk` below and tap to install on any Android phone or tablet.
             - **iOS**: Available as an installable standalone app via Safari ("Add to Home Screen") or by building the included Xcode project in `frontend/ios/`.
             
-            **Connected Backend**: `https://melodyforge-music-lms-backend.onrender.com`
+            **Connected Backend**: `https://melodyforge-music-lms.onrender.com`
           files: frontend/output/MelodyForge.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

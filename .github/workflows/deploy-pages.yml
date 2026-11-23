@@ -38,7 +38,7 @@ jobs:
       - name: Build Frontend
         run: npm run build
         env:
-          VITE_API_URL: https://melodyforge-music-lms-backend.onrender.com
+          VITE_API_URL: https://melodyforge-music-lms.onrender.com
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
