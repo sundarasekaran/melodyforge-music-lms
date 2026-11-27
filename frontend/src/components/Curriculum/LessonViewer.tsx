@@ -32,10 +32,15 @@ import {
   Hammer,
   Layers,
   Target,
+  AlertTriangle,
+  RotateCcw,
 } from 'lucide-react';
+import { getFallbackLesson } from '../../data/lessonsData';
 
 interface LessonViewerProps {
   lessonId: number;
+  initialLesson?: Lesson | null;
+  initialCompleted?: boolean | null;
   onBack: () => void;
   onLessonCompleted: () => void;
   onNavigateLesson?: (lessonId: number) => void;
@@ -43,15 +48,35 @@ interface LessonViewerProps {
 
 export const LessonViewer: React.FC<LessonViewerProps> = ({
   lessonId,
+  initialLesson,
+  initialCompleted,
   onBack,
   onLessonCompleted,
   onNavigateLesson,
 }) => {
   const { user, awardLocalXp, refreshUser } = useAuth();
-  const [lesson, setLesson] = useState<Lesson | null>(null);
-  const [completed, setCompleted] = useState<boolean>(false);
-  const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // Resolve starting lesson synchronously from prop, API cache, or client fallback
+  const resolvedInitial =
+    (initialLesson && initialLesson.id === lessonId ? initialLesson : null) ||
+    api.getCachedLesson(lessonId) ||
+    getFallbackLesson(lessonId);
+
+  // Authoritatively resolve initial progress state:
+  const cachedProg = api.getCachedProgress(lessonId);
+  const resolvedInitialCompleted =
+    typeof initialCompleted === 'boolean'
+      ? initialCompleted
+      : typeof cachedProg?.completed === 'boolean'
+      ? cachedProg.completed
+      : null;
+
+  const [lesson, setLesson] = useState<Lesson | null>(resolvedInitial || null);
+  const [completed, setCompleted] = useState<boolean | null>(resolvedInitialCompleted);
+  const [isProgressAvailable, setIsProgressAvailable] = useState<boolean>(resolvedInitialCompleted !== null);
+  const [exercises, setExercises] = useState<Exercise[]>(resolvedInitial?.exercises || []);
+  const [loading, setLoading] = useState<boolean>(!resolvedInitial);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Exercise states
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
@@ -62,32 +87,71 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
   const [xpEarned, setXpEarned] = useState(0);
   const [workspaceMode, setWorkspaceMode] = useState<'LAB' | 'PIANO'>('LAB');
 
-  useEffect(() => {
-    const fetchLesson = async () => {
+  const fetchLesson = async () => {
+    // Only show spinning indicator if we don't have the lesson data yet
+    if (!lesson) {
       setLoading(true);
-      try {
-        const data = await api.getLesson(lessonId);
-        setLesson(data.lesson);
+    }
+    setErrorMessage(null);
+    try {
+      const data = await api.getLesson(lessonId);
+      setLesson(data.lesson);
+
+      if (data.isProgressAvailable && typeof data.completed === 'boolean') {
         setCompleted(data.completed);
-        setExercises(data.lesson.exercises || []);
-        setCurrentExerciseIndex(0);
-        setUserAnswers({});
-        setEvaluationResults({});
-      } catch (e) {
-        console.error('Failed to load lesson', e);
-      } finally {
-        setLoading(false);
+        setIsProgressAvailable(true);
+      } else if (completed === null) {
+        setCompleted(data.completed);
+        setIsProgressAvailable(data.isProgressAvailable);
       }
-    };
+
+      if (data.lesson.exercises && data.lesson.exercises.length > 0) {
+        setExercises(data.lesson.exercises);
+      }
+      setCurrentExerciseIndex(0);
+      setUserAnswers({});
+      setEvaluationResults({});
+    } catch (e: any) {
+      console.warn('Failed to load lesson from server, utilizing resilient client curriculum:', e);
+      const fallback = resolvedInitial || api.getCachedLesson(lessonId) || getFallbackLesson(lessonId);
+      if (fallback) {
+        setLesson(fallback);
+        if (fallback.exercises && fallback.exercises.length > 0) {
+          setExercises(fallback.exercises);
+        }
+        const prog = api.getCachedProgress(lessonId);
+        if (prog) {
+          setCompleted(prog.completed);
+          setIsProgressAvailable(true);
+        } else if (completed === null) {
+          setIsProgressAvailable(false);
+        }
+      } else if (!lesson) {
+        setErrorMessage(
+          e?.message || 'Unable to load lesson materials. Please check your connection and try again.'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLesson();
   }, [lessonId]);
 
   const currentExercise = exercises[currentExerciseIndex];
 
-  // Parse exercise question data
-  const questionMeta = currentExercise?.questionData
-    ? JSON.parse(currentExercise.questionData)
-    : {};
+  // Safely parse exercise question data without crashing on malformed payloads
+  const questionMeta = React.useMemo(() => {
+    if (!currentExercise?.questionData) return {};
+    if (typeof currentExercise.questionData === 'object') return currentExercise.questionData;
+    try {
+      return JSON.parse(currentExercise.questionData);
+    } catch {
+      return {};
+    }
+  }, [currentExercise]);
 
   // Audio trigger
   const playExerciseAudio = async () => {
@@ -136,19 +200,25 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
 
   // Complete lesson
   const handleCompleteLesson = async () => {
+    if (completed === true || isSubmitting) return;
     setIsSubmitting(true);
     try {
       const result = await api.completeLesson(lessonId, 100);
       setCompleted(true);
+      setIsProgressAvailable(true);
       setXpEarned(result.xpAwarded || lesson?.xpReward || 50);
       setShowCelebration(true);
       awardLocalXp(result.xpAwarded || lesson?.xpReward || 50);
       refreshUser();
       onLessonCompleted();
     } catch (e) {
-      console.error('Error completing lesson', e);
+      console.error('Error completing lesson, queuing offline progress', e);
+      api.queuePendingOfflineLesson(lessonId, 100);
       setCompleted(true);
+      setIsProgressAvailable(true);
+      setXpEarned(lesson?.xpReward || 50);
       setShowCelebration(true);
+      awardLocalXp(lesson?.xpReward || 50);
       onLessonCompleted();
     } finally {
       setIsSubmitting(false);
@@ -185,6 +255,48 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
         'Play the 5-finger pattern from C4 to G4',
       ];
     }
+    if (title.includes('Ear Training') || title.includes('Listening')) {
+      return [
+        'Develop pitch discrimination between low, middle, and high registers',
+        'Identify reference Middle C (C4) by ear against comparative pitches',
+        'Strengthen internal audiation and relative interval recognition',
+      ];
+    }
+    if (title.includes('Scale') || title.includes('Formula')) {
+      return [
+        'Understand Whole-Step (W) and Half-Step (H) intervals',
+        'Master the universal Major Scale formula: W-W-H-W-W-W-H',
+        'Execute right-hand fingering rules (1-2-3 thumb-tuck 1-2-3-4-5)',
+      ];
+    }
+    if (title.includes('Triad') || title.includes('Chord')) {
+      return [
+        'Learn the anatomy of a 3-note chord: Root, 3rd, and 5th',
+        'Differentiate Major triads (bright) from Minor triads (somber)',
+        'Play foundational C Major, F Major, G Major, and A Minor triads',
+      ];
+    }
+    if (title.includes('Ode to Joy') || title.includes('Hands Together') || title.includes('Coordination')) {
+      return [
+        'Coordinate independent right-hand melody with left-hand root bass notes',
+        'Maintain a steady 4/4 meter across measure boundaries',
+        'Perform Beethoven’s Ode to Joy theme with consistent rhythmic cadence',
+      ];
+    }
+    if (title.includes('Progression') || title.includes('ii-V-I')) {
+      return [
+        'Analyze the foundational ii-V-I cadence across major and minor keys',
+        'Understand functional harmonic motion and voice leading',
+        'Apply voice leading shortcuts for smooth chord transitions',
+      ];
+    }
+    if (title.includes('Arpeggio')) {
+      return [
+        'Develop fluid wrist and arm rotation across multi-octave arpeggios',
+        'Master thumb-under crossing technique without accenting notes',
+        'Perform unbroken ascending and descending 3-octave broken chords',
+      ];
+    }
     return [
       'Master core theoretical fundamentals for this lesson',
       'Demonstrate practical recognition on the keyboard',
@@ -192,19 +304,81 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
     ];
   };
 
-  if (loading || !lesson) {
+  // 1. Loading State (Keeps the Back button visible so students are never trapped)
+  if (loading && !lesson) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-slate-400">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm font-medium">Loading lesson materials...</span>
+      <div className="w-full space-y-4 animate-in fade-in duration-200">
+        <div className="pb-3 border-b border-slate-800/80">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Learning Roadmap</span>
+          </button>
+        </div>
+        <div className="flex items-center justify-center min-h-[350px] text-slate-400">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+            <span className="text-sm font-medium">Loading lesson materials...</span>
+          </div>
         </div>
       </div>
     );
   }
 
+  // 2. Error Fallback State (Provides clear explanation and recovery buttons)
+  if (errorMessage && !lesson) {
+    return (
+      <div className="w-full space-y-4 animate-in fade-in duration-200">
+        <div className="pb-3 border-b border-slate-800/80">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <ArrowLeft size={16} />
+            <span>Back to Learning Roadmap</span>
+          </button>
+        </div>
+        <div className="flex items-center justify-center min-h-[350px]">
+          <div className="max-w-md w-full p-6 sm:p-8 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-4 shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto text-xl">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <h3 className="text-base sm:text-lg font-bold text-white">Unable to Load Lesson</h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-1 leading-relaxed">
+                {errorMessage}
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button variant="secondary" size="sm" onClick={onBack} icon={<ArrowLeft size={14} />}>
+                Back to Roadmap
+              </Button>
+              <Button variant="primary" size="sm" onClick={fetchLesson} icon={<RotateCcw size={14} />}>
+                Retry Loading
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!lesson) {
+    return null;
+  }
+
   const objectives = getObjectives(lesson.title);
   const exerciseProgress = exercises.length > 0 ? (Object.keys(evaluationResults).length / exercises.length) * 100 : 0;
+  const tierName =
+    lesson.id >= 14
+      ? 'Tier 4: Expert'
+      : lesson.id >= 11
+      ? 'Tier 3: Pro'
+      : lesson.id >= 8
+      ? 'Tier 2: Intermediate'
+      : 'Tier 1: Basics';
 
   return (
     <div className="w-full max-w-full min-w-0 space-y-4 sm:space-y-6 animate-in fade-in duration-200">
@@ -225,10 +399,16 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           <Badge variant="gold" size="sm">
             +{lesson.xpReward} XP
           </Badge>
-          {completed && (
+          {completed === true && (
             <Badge variant="emerald" size="sm" dot>
               Completed
             </Badge>
+          )}
+          {!isProgressAvailable && completed === null && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800/90 text-slate-400 border border-slate-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              Progress Unavailable (Offline)
+            </span>
           )}
         </div>
       </div>
@@ -241,7 +421,7 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-xl w-full min-w-0 max-w-full break-words overflow-hidden">
             <div className="pb-4 sm:pb-5 border-b border-slate-800 mb-5 sm:mb-6 w-full min-w-0">
               <span className="text-[11px] sm:text-xs uppercase font-bold tracking-wider text-indigo-400 block truncate">
-                Tier 1: Basics • Step {lesson.orderIndex}
+                {tierName} • Step {lesson.orderIndex}
               </span>
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-white mt-1 tracking-tight break-words">
                 {lesson.title}
@@ -526,27 +706,35 @@ export const LessonViewer: React.FC<LessonViewerProps> = ({
                 Lesson Status
               </span>
               <h4 className="text-base font-bold text-white mt-0.5 truncate">
-                {completed ? 'Lesson Completed' : 'In Progress'}
+                {completed === true
+                  ? 'Lesson Completed'
+                  : !isProgressAvailable && completed === null
+                  ? 'Progress Unavailable (Offline)'
+                  : 'In Progress'}
               </h4>
             </div>
 
             <ProgressBar
-              value={completed ? 100 : exerciseProgress}
+              value={completed === true ? 100 : exerciseProgress}
               label="Lesson Progress"
               showPercent
-              color={completed ? 'emerald' : 'gold'}
+              color={completed === true ? 'emerald' : 'gold'}
             />
 
             <Button
-              variant={completed ? 'secondary' : 'amber'}
+              variant={completed === true ? 'secondary' : 'amber'}
               size="lg"
               className="w-full font-bold justify-center"
-              disabled={isSubmitting || completed}
+              disabled={isSubmitting || completed === true}
               loading={isSubmitting}
               icon={<CheckCircle2 size={18} />}
               onClick={handleCompleteLesson}
             >
-              {completed ? 'Completed' : 'Mark as Complete (+XP)'}
+              {completed === true
+                ? 'Completed'
+                : !isProgressAvailable && completed === null
+                ? 'Complete Offline (+XP)'
+                : 'Mark as Complete (+XP)'}
             </Button>
           </div>
 

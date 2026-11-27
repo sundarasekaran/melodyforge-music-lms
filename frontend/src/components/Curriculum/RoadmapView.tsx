@@ -33,7 +33,7 @@ import {
 
 interface RoadmapViewProps {
   selectedInstrument?: string;
-  onSelectLesson: (lessonId: number) => void;
+  onSelectLesson: (lessonId: number, lessonData?: Lesson, isCompleted?: boolean) => void;
   onSelectHistory?: () => void;
   onOpenAssessments?: (level?: number) => void;
 }
@@ -414,7 +414,7 @@ export const RoadmapView: React.FC<RoadmapViewProps> = ({
                                 return (
                                   <button
                                     key={lesson.id}
-                                    onClick={() => onSelectLesson(lesson.id)}
+                                    onClick={() => onSelectLesson(lesson.id, lesson, Boolean(isCompleted))}
                                     className="w-full text-left p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-2 sm:gap-3 group cursor-pointer min-w-0"
                                   >
                                     <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">

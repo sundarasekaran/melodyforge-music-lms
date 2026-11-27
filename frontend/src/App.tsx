@@ -14,9 +14,9 @@ import { PracticeStudio } from './components/PracticeStudio/PracticeStudio';
 import { BadgesGallery } from './components/Gamification/BadgesGallery';
 import { Leaderboard } from './components/Gamification/Leaderboard';
 import { MyProgressView } from './components/Progress/MyProgressView';
-import { AdminPortal } from './components/Admin/AdminPortal';
+const AdminPortal = React.lazy(() => import('./components/Admin/AdminPortal').then(m => ({ default: m.AdminPortal })));
 import { AssessmentsOverview, AssessmentRunner, GraduationCertificate } from './components/Assessments';
-import { AssessmentItem } from './types';
+import { AssessmentItem, Lesson } from './types';
 import { SplashScreen } from './components/ui/SplashScreen';
 import { Button } from './components/ui/Button';
 import { Music } from 'lucide-react';
@@ -26,6 +26,8 @@ const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavigationTab>('DASHBOARD');
   const [selectedInstrument, setSelectedInstrument] = useState<string>('piano');
   const [activeLessonId, setActiveLessonId] = useState<number | null>(null);
+  const [activeLessonData, setActiveLessonData] = useState<Lesson | null>(null);
+  const [activeLessonCompleted, setActiveLessonCompleted] = useState<boolean | null>(null);
   const [isViewingHistory, setIsViewingHistory] = useState<boolean>(false);
   const [selectedAssessment, setSelectedAssessment] = useState<AssessmentItem | null>(null);
 
@@ -52,9 +54,11 @@ const MainApp: React.FC = () => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Handle launch lesson from dashboard or roadmap
-  const handleLaunchLesson = (lessonId: number) => {
+  const handleLaunchLesson = (lessonId: number, lessonData?: Lesson, isCompleted?: boolean) => {
     setActiveTab('ROADMAP');
     setActiveLessonId(lessonId);
+    setActiveLessonData(lessonData || null);
+    setActiveLessonCompleted(typeof isCompleted === 'boolean' ? isCompleted : null);
     setIsViewingHistory(false);
   };
 
@@ -62,6 +66,8 @@ const MainApp: React.FC = () => {
     setActiveTab(tab);
     if (tab !== 'ROADMAP') {
       setActiveLessonId(null);
+      setActiveLessonData(null);
+      setActiveLessonCompleted(null);
       setIsViewingHistory(false);
     }
     if (tab !== 'ASSESSMENTS') {
@@ -177,21 +183,30 @@ const MainApp: React.FC = () => {
                 ) : activeLessonId ? (
                   <LessonViewer
                     lessonId={activeLessonId}
-                    onBack={() => setActiveLessonId(null)}
+                    initialLesson={activeLessonData}
+                    initialCompleted={activeLessonCompleted}
+                    onBack={() => {
+                      setActiveLessonId(null);
+                      setActiveLessonData(null);
+                      setActiveLessonCompleted(null);
+                    }}
                     onLessonCompleted={() => {
-                      // Lesson completion handled
+                      setActiveLessonCompleted(true);
                     }}
                   />
                 ) : (
                   <RoadmapView
                     selectedInstrument={selectedInstrument}
-                    onSelectLesson={(id) => {
+                    onSelectLesson={(id, lesson, isCompleted) => {
                       setActiveLessonId(id);
+                      setActiveLessonData(lesson || null);
+                      setActiveLessonCompleted(typeof isCompleted === 'boolean' ? isCompleted : null);
                       setIsViewingHistory(false);
                     }}
                     onSelectHistory={() => {
                       setIsViewingHistory(true);
                       setActiveLessonId(null);
+                      setActiveLessonData(null);
                     }}
                     onOpenAssessments={() => {
                       setActiveTab('ASSESSMENTS');
@@ -272,7 +287,9 @@ const MainApp: React.FC = () => {
               {/* TAB 10: Admin Management Portal (Strictly guarded for single administrative credential) */}
               {activeTab === 'ADMIN' && (
                 user?.role === 'ROLE_ADMIN' ? (
-                  <AdminPortal />
+                  <React.Suspense fallback={<div className="p-8 text-center text-slate-400">Loading Admin Management...</div>}>
+                    <AdminPortal />
+                  </React.Suspense>
                 ) : (
                   <div className="max-w-md mx-auto my-16 bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl">
                     <div className="w-12 h-12 rounded-2xl bg-rose-600/20 text-rose-400 border border-rose-500/30 flex items-center justify-center mx-auto mb-4">

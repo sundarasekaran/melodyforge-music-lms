@@ -28,7 +28,7 @@ import { NavigationTab } from '../navigation/Sidebar';
 
 interface StudentDashboardProps {
   onNavigate: (tab: NavigationTab) => void;
-  onLaunchLesson: (lessonId: number) => void;
+  onLaunchLesson: (lessonId: number, lessonData?: Lesson, isCompleted?: boolean) => void;
 }
 
 export const StudentDashboard: React.FC<StudentDashboardProps> = ({
@@ -108,7 +108,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                 variant="primary"
                 size="lg"
                 icon={<PlayCircle size={20} />}
-                onClick={() => onLaunchLesson(nextLesson.id)}
+                onClick={() => onLaunchLesson(nextLesson.id, nextLesson)}
               >
                 Continue Learning
               </Button>
@@ -210,7 +210,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
                   variant="primary"
                   size="md"
                   icon={<PlayCircle size={18} />}
-                  onClick={() => onLaunchLesson(nextLesson.id)}
+                  onClick={() => onLaunchLesson(nextLesson.id, nextLesson, false)}
                 >
                   Start Lesson
                 </Button>

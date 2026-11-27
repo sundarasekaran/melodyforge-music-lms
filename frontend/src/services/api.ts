@@ -1,4 +1,4 @@
-import { 
+import type {
   AuthResponse, 
   Instrument, 
   HistorySection, 
@@ -22,26 +22,143 @@ import {
   AdminPlatformAnalytics,
   StudentSummaryPage
 } from '../types';
+import { getFallbackLesson } from '../data/lessonsData.ts';
 
-const DEFAULT_API_URL = import.meta.env.PROD 
+const DEFAULT_API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.PROD)
   ? 'https://melodyforge-music-lms.onrender.com'
-  : '';
+  : 'https://melodyforge-music-lms.onrender.com';
 
-const API_BASE = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/$/, '') + '/api/v1';
+const API_BASE = (((typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || DEFAULT_API_URL)).replace(/\/$/, '') + '/api/v1';
 
 class ApiService {
   private token: string | null = null;
+  private lessonCache = new Map<number, Lesson>();
+  private progressCache = new Map<number, { completed: boolean; scorePercent: number }>();
+  private pendingSync = new Map<number, number>();
 
   constructor() {
-    this.token = localStorage.getItem('music_lms_token');
+    this.token = typeof localStorage !== 'undefined' ? localStorage.getItem('music_lms_token') : null;
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('music_lms_progress_cache');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (typeof parsed === 'object' && parsed !== null) {
+            Object.entries(parsed).forEach(([key, val]: [string, any]) => {
+              const numId = Number(key);
+              if (!isNaN(numId) && val && typeof val.completed === 'boolean') {
+                this.progressCache.set(numId, {
+                  completed: val.completed,
+                  scorePercent: typeof val.scorePercent === 'number' ? val.scorePercent : 100,
+                });
+              }
+            });
+          }
+        }
+        const storedSync = localStorage.getItem('music_lms_pending_sync');
+        if (storedSync) {
+          const parsedSync = JSON.parse(storedSync);
+          if (typeof parsedSync === 'object' && parsedSync !== null) {
+            Object.entries(parsedSync).forEach(([key, val]: [string, any]) => {
+              const numId = Number(key);
+              if (!isNaN(numId) && typeof val === 'number') {
+                this.pendingSync.set(numId, val);
+              }
+            });
+          }
+        }
+      } catch {}
+    }
+  }
+
+  public cacheLesson(lesson: Lesson) {
+    if (lesson && typeof lesson.id === 'number') {
+      this.lessonCache.set(lesson.id, lesson);
+    }
+  }
+
+  public getCachedLesson(id: number): Lesson | undefined {
+    return this.lessonCache.get(id) || getFallbackLesson(id);
+  }
+
+  public cacheProgress(lessonId: number, completed: boolean, scorePercent = 100) {
+    if (typeof lessonId === 'number' && !isNaN(lessonId)) {
+      this.progressCache.set(lessonId, { completed, scorePercent });
+      if (typeof localStorage !== 'undefined') {
+        try {
+          const obj: Record<number, { completed: boolean; scorePercent: number }> = {};
+          this.progressCache.forEach((val, key) => {
+            obj[key] = val;
+          });
+          localStorage.setItem('music_lms_progress_cache', JSON.stringify(obj));
+        } catch {}
+      }
+    }
+  }
+
+  public getCachedProgress(lessonId: number): { completed: boolean; scorePercent: number } | undefined {
+    return this.progressCache.get(lessonId);
+  }
+
+  public clearProgressCache() {
+    this.progressCache.clear();
+    this.pendingSync.clear();
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.removeItem('music_lms_progress_cache');
+        localStorage.removeItem('music_lms_pending_sync');
+      } catch {}
+    }
+  }
+
+  public queuePendingOfflineLesson(lessonId: number, scorePercent = 100) {
+    this.cacheProgress(lessonId, true, scorePercent);
+    this.pendingSync.set(lessonId, scorePercent);
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const obj: Record<number, number> = {};
+        this.pendingSync.forEach((score, id) => {
+          obj[id] = score;
+        });
+        localStorage.setItem('music_lms_pending_sync', JSON.stringify(obj));
+      } catch {}
+    }
+  }
+
+  public async syncPendingOfflineProgress(): Promise<void> {
+    if (!this.token || this.pendingSync.size === 0) return;
+    const entries = Array.from(this.pendingSync.entries());
+    for (const [id, score] of entries) {
+      try {
+        await this.completeLesson(id, score);
+        this.pendingSync.delete(id);
+      } catch (err) {
+        console.warn(`Failed to sync offline lesson ${id}:`, err);
+      }
+    }
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const obj: Record<number, number> = {};
+        this.pendingSync.forEach((score, id) => {
+          obj[id] = score;
+        });
+        localStorage.setItem('music_lms_pending_sync', JSON.stringify(obj));
+      } catch {}
+    }
   }
 
   public setToken(token: string | null) {
+    if (this.token !== token) {
+      this.clearProgressCache();
+    }
     this.token = token;
-    if (token) {
-      localStorage.setItem('music_lms_token', token);
-    } else {
-      localStorage.removeItem('music_lms_token');
+    if (typeof localStorage !== 'undefined') {
+      if (token) {
+        localStorage.setItem('music_lms_token', token);
+      } else {
+        localStorage.removeItem('music_lms_token');
+        this.clearProgressCache();
+      }
     }
   }
 
@@ -165,23 +282,102 @@ class ApiService {
   }
 
   public async getInstrumentTiers(slug: string): Promise<LearningTier[]> {
-    return this.request<LearningTier[]>(`/instruments/${slug}/tiers`);
+    const tiers = await this.request<LearningTier[]>(`/instruments/${slug}/tiers`);
+    // Cache all discovered lessons for instant offline/fallback access
+    if (Array.isArray(tiers)) {
+      for (const tier of tiers) {
+        if (Array.isArray(tier.levels)) {
+          for (const level of tier.levels) {
+            if (Array.isArray(level.courses)) {
+              for (const course of level.courses) {
+                if (Array.isArray(course.lessons)) {
+                  for (const lesson of course.lessons) {
+                    this.cacheLesson(lesson);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return tiers;
   }
 
   // Curriculum & Lesson Endpoints
-  public async getLesson(id: number): Promise<{ lesson: Lesson; completed: boolean; scorePercent: number }> {
-    return this.request<{ lesson: Lesson; completed: boolean; scorePercent: number }>(`/lessons/${id}`);
+  public async getLesson(id: number): Promise<{
+    lesson: Lesson;
+    completed: boolean | null;
+    scorePercent: number | null;
+    isProgressAvailable: boolean;
+  }> {
+    try {
+      const data = await this.request<{ lesson: Lesson; completed: boolean; scorePercent: number }>(`/lessons/${id}`);
+      if (data?.lesson) {
+        this.cacheLesson(data.lesson);
+      }
+      if (typeof data?.completed === 'boolean') {
+        this.cacheProgress(id, data.completed, data.scorePercent ?? 0);
+      }
+      return {
+        lesson: data.lesson,
+        completed: data.completed,
+        scorePercent: data.scorePercent ?? 0,
+        isProgressAvailable: true,
+      };
+    } catch (err) {
+      console.warn(`api.getLesson(${id}) remote fetch failed, recovering from cache or fallback catalog:`, err);
+      const cachedLesson = this.lessonCache.get(id) || getFallbackLesson(id);
+      if (cachedLesson) {
+        const cachedProg = this.progressCache.get(id);
+        if (cachedProg) {
+          return {
+            lesson: cachedLesson,
+            completed: cachedProg.completed,
+            scorePercent: cachedProg.scorePercent,
+            isProgressAvailable: true,
+          };
+        }
+        return {
+          lesson: cachedLesson,
+          completed: null,
+          scorePercent: null,
+          isProgressAvailable: false,
+        };
+      }
+      throw err;
+    }
   }
 
   public async completeLesson(id: number, scorePercent = 100): Promise<{ lessonId: number; completed: boolean; xpAwarded: number; totalXp: number; currentLevel: number }> {
-    return this.request(`/lessons/${id}/complete`, {
+    const res = await this.request<{ lessonId: number; completed: boolean; xpAwarded: number; totalXp: number; currentLevel: number }>(`/lessons/${id}/complete`, {
       method: 'POST',
       body: JSON.stringify({ scorePercent }),
     });
+    if (res && res.completed) {
+      this.cacheProgress(id, true, scorePercent);
+    }
+    return res;
   }
 
   public async getMyProgress(): Promise<UserProgress[]> {
-    return this.request<UserProgress[]>('/lessons/progress/me');
+    if (this.pendingSync.size > 0) {
+      await this.syncPendingOfflineProgress().catch(() => {});
+    }
+    const progressList = await this.request<UserProgress[]>('/lessons/progress/me');
+    if (Array.isArray(progressList)) {
+      for (const p of progressList) {
+        const lid = p.lesson?.id || (p as any).lessonId;
+        if (typeof lid === 'number') {
+          this.cacheProgress(
+            lid,
+            Boolean(p.completed),
+            typeof p.scorePercent === 'number' ? p.scorePercent : (p.completed ? 100 : 0)
+          );
+        }
+      }
+    }
+    return progressList;
   }
 
   // Exercise Evaluation
